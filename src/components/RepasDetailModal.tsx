@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Utensils, ShoppingBasket, BookOpen } from 'lucide-react';
+import { Utensils, ShoppingBasket, BookOpen, Pencil, Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { RepasWithIngredients } from '@/types';
 import { formatIngredient } from '@/lib/shopping-list-utils';
 import Drawer from '@/components/Drawer';
@@ -10,10 +11,17 @@ interface RepasDetailModalProps {
   repas: RepasWithIngredients | null;
   isOpen: boolean;
   onClose: () => void;
+  onDeleted?: (id: number) => void;
 }
 
-export default function RepasDetailModal({ repas, isOpen, onClose }: RepasDetailModalProps) {
+export default function RepasDetailModal({ repas, isOpen, onClose, onDeleted }: RepasDetailModalProps) {
+  const router = useRouter();
   const [activeRepas, setActiveRepas] = useState<RepasWithIngredients | null>(null);
+
+  // Confirmation delete state
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (repas) {
@@ -25,6 +33,8 @@ export default function RepasDetailModal({ repas, isOpen, onClose }: RepasDetail
     if (!isOpen) {
       const timer = setTimeout(() => {
         setActiveRepas(null);
+        setIsDeleteConfirmOpen(false);
+        setDeleteError(null);
       }, 300);
       return () => clearTimeout(timer);
     }
@@ -36,14 +46,39 @@ export default function RepasDetailModal({ repas, isOpen, onClose }: RepasDetail
   const currentRepas = activeRepas || repas;
   if (!currentRepas) return null;
 
-  const { titre, photoUrl, recette, ingredients } = currentRepas;
+  const { id, titre, photoUrl, recette, ingredients } = currentRepas;
+
+  const handleEdit = () => {
+    onClose();
+    router.push(`/repas/${id}/modifier`);
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      setIsDeleting(true);
+      setDeleteError(null);
+
+      const res = await fetch(`/api/repas/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Erreur lors de la suppression.');
+      }
+
+      onClose();
+      if (onDeleted) onDeleted(id);
+    } catch (err: any) {
+      setDeleteError(err.message || 'Une erreur est survenue.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const headerImage = (
     <div className="relative w-full h-56 md:h-72 bg-brand-light dark:bg-neutral-800/30 border-b border-neutral-100 dark:border-neutral-800/20">
       {photoUrl ? (
-        <img 
-          src={photoUrl} 
-          alt={titre} 
+        <img
+          src={photoUrl}
+          alt={titre}
           className="object-cover w-full h-full"
         />
       ) : (
@@ -55,79 +90,168 @@ export default function RepasDetailModal({ repas, isOpen, onClose }: RepasDetail
   );
 
   return (
-    <Drawer
-      isOpen={isOpen}
-      onClose={onClose}
-      headerImage={headerImage}
-      maxWidth="sm:max-w-3xl"
-    >
-      <div className="space-y-6">
-        {/* Header Title */}
-        <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-light-main dark:text-text-dark-main">
-            {titre}
-          </h2>
-        </div>
+    <>
+      <Drawer
+        isOpen={isOpen}
+        onClose={onClose}
+        headerImage={headerImage}
+        maxWidth="sm:max-w-3xl"
+      >
+        <div className="space-y-6">
+          {/* Header Title + Actions */}
+          <div className="flex items-start justify-between gap-4">
+            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-light-main dark:text-text-dark-main leading-tight">
+              {titre}
+            </h2>
 
-        <hr className="border-neutral-100 dark:border-neutral-800/40" />
-
-        {/* Grid Layout: Column 1 (Ingredients), Column 2-3 (Recipe) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          
-          {/* Column 1: Ingredients */}
-          <div className="md:col-span-1 space-y-5">
-            <div className="flex items-center gap-2 text-brand font-bold text-sm uppercase tracking-wider">
-              <ShoppingBasket className="h-5 w-5 stroke-[2]" />
-              <h3>Ingrédients</h3>
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 shrink-0 mt-0.5">
+              <button
+                type="button"
+                onClick={handleEdit}
+                title="Modifier ce repas"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-text-light-main dark:text-text-dark-main bg-neutral-100 dark:bg-neutral-800 hover:bg-brand hover:text-white dark:hover:bg-brand dark:hover:text-white rounded-input transition-all duration-200 active:scale-95 cursor-pointer"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Modifier</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsDeleteConfirmOpen(true)}
+                title="Supprimer ce repas"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white rounded-input transition-all duration-200 active:scale-95 cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Supprimer</span>
+              </button>
             </div>
-
-            {ingredients.length === 0 ? (
-              <p className="text-sm text-text-light-muted dark:text-text-dark-muted italic">
-                Aucun ingrédient renseigné.
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {ingredients.map((ing) => (
-                  <li 
-                    key={ing.id} 
-                    className="text-sm font-medium text-text-light-main dark:text-text-dark-main bg-neutral-50 dark:bg-neutral-800/20 px-3.5 py-2.5 rounded-xl border border-neutral-100/50 dark:border-neutral-800/20"
-                  >
-                    {formatIngredient(ing.nom, ing.quantite, ing.unite)}
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
 
-          {/* Column 2-3: Recipe Instructions */}
-          <div className="md:col-span-2 space-y-5">
-            <div className="flex items-center gap-2 text-brand font-bold text-sm uppercase tracking-wider">
-              <BookOpen className="h-5 w-5 stroke-[2]" />
-              <h3>Préparation</h3>
-            </div>
+          <hr className="border-neutral-100 dark:border-neutral-800/40" />
 
-            {recette ? (
-              <div className="space-y-4">
-                {recette.split('\n').filter(line => line.trim() !== '').map((step, idx) => (
-                  <div key={idx} className="flex gap-3.5 items-start">
-                    <span className="flex items-center justify-center shrink-0 w-6 h-6 rounded-full bg-brand-light dark:bg-brand/10 text-brand text-xs font-bold mt-0.5 border border-brand/10">
-                      {idx + 1}
-                    </span>
-                    <p className="text-sm font-medium text-text-light-main dark:text-text-dark-main leading-relaxed pt-0.5">
-                      {step}
-                    </p>
-                  </div>
-                ))}
+          {/* Grid Layout: Column 1 (Ingredients), Column 2-3 (Recipe) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+
+            {/* Column 1: Ingredients */}
+            <div className="md:col-span-1 space-y-5">
+              <div className="flex items-center gap-2 text-brand font-bold text-sm uppercase tracking-wider">
+                <ShoppingBasket className="h-5 w-5 stroke-[2]" />
+                <h3>Ingrédients</h3>
               </div>
-            ) : (
-              <p className="text-sm text-text-light-muted dark:text-text-dark-muted italic">
-                Aucune instruction de préparation.
-              </p>
-            )}
-          </div>
 
+              {ingredients.length === 0 ? (
+                <p className="text-sm text-text-light-muted dark:text-text-dark-muted italic">
+                  Aucun ingrédient renseigné.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {ingredients.map((ing) => (
+                    <li
+                      key={ing.id}
+                      className="text-sm font-medium text-text-light-main dark:text-text-dark-main bg-neutral-50 dark:bg-neutral-800/20 px-3.5 py-2.5 rounded-xl border border-neutral-100/50 dark:border-neutral-800/20"
+                    >
+                      {formatIngredient(ing.nom, ing.quantite, ing.unite)}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Column 2-3: Recipe Instructions */}
+            <div className="md:col-span-2 space-y-5">
+              <div className="flex items-center gap-2 text-brand font-bold text-sm uppercase tracking-wider">
+                <BookOpen className="h-5 w-5 stroke-[2]" />
+                <h3>Préparation</h3>
+              </div>
+
+              {recette ? (
+                <div className="space-y-4">
+                  {recette.split('\n').filter(line => line.trim() !== '').map((step, idx) => (
+                    <div key={idx} className="flex gap-3.5 items-start">
+                      <span className="flex items-center justify-center shrink-0 w-6 h-6 rounded-full bg-brand-light dark:bg-brand/10 text-brand text-xs font-bold mt-0.5 border border-brand/10">
+                        {idx + 1}
+                      </span>
+                      <p className="text-sm font-medium text-text-light-main dark:text-text-dark-main leading-relaxed pt-0.5">
+                        {step}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-text-light-muted dark:text-text-dark-muted italic">
+                  Aucune instruction de préparation.
+                </p>
+              )}
+            </div>
+
+          </div>
         </div>
-      </div>
-    </Drawer>
+      </Drawer>
+
+      {/* Delete Confirmation Drawer */}
+      <Drawer
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => {
+          setIsDeleteConfirmOpen(false);
+          setDeleteError(null);
+        }}
+        maxWidth="sm:max-w-md"
+        title={
+          <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+            <AlertTriangle className="h-5 w-5" />
+            <span className="font-extrabold text-lg">Supprimer le repas</span>
+          </div>
+        }
+      >
+        <div className="space-y-5">
+          <p className="text-sm text-text-light-main dark:text-text-dark-main font-medium leading-relaxed">
+            Êtes-vous sûr de vouloir supprimer{' '}
+            <span className="font-extrabold">"{titre}"</span> ?
+            <br />
+            <span className="text-text-light-muted dark:text-text-dark-muted text-xs mt-1 block">
+              Cette action est irréversible. Le repas sera définitivement supprimé de votre carnet de recettes.
+            </span>
+          </p>
+
+          {deleteError && (
+            <div className="p-3 text-xs font-semibold bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-xl border border-red-200/50 dark:border-red-900/40">
+              {deleteError}
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 pt-2 border-t border-neutral-100 dark:border-neutral-800/20">
+            <button
+              type="button"
+              onClick={() => {
+                setIsDeleteConfirmOpen(false);
+                setDeleteError(null);
+              }}
+              disabled={isDeleting}
+              className="flex-1 px-4 py-2.5 text-sm font-bold border border-neutral-200 dark:border-neutral-850 rounded-input hover:bg-neutral-50 dark:hover:bg-neutral-800 text-text-light-main dark:text-text-dark-main active:scale-95 transition-all cursor-pointer text-center disabled:opacity-50"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-extrabold bg-red-600 hover:bg-red-700 text-white rounded-input active:scale-95 transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:pointer-events-none"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Suppression...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  <span>Supprimer définitivement</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Drawer>
+    </>
   );
 }

@@ -186,6 +186,11 @@ export default function RepasPage() {
           setIsDetailOpen(false);
           setSelectedRepas(null);
         }}
+        onDeleted={(id) => {
+          setRepasList((prev) => prev.filter((r) => r.id !== id));
+          setIsDetailOpen(false);
+          setSelectedRepas(null);
+        }}
       />
 
       {/* Sort Drawer */}
