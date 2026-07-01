@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  /* L'orange/rouge signature de Jow */
+  --color-brand: #E64A33;
+  --color-brand-hover: #C83B25;
+  --color-brand-light: #FDF2F0;
+
+  /* Thème Clair : Fonds chauds / textes sombres mais doux */
+  --color-bg-light: #FAF6F0;
+  --color-card-light: #FFFFFF;
+  --color-text-light-main: #1A1A1A;
+  --color-text-light-muted: #666666;
+
+  /* Thème Sombre : Éviter le noir pur, utiliser des gris-moka très sombres */
+  --color-bg-dark: #121110;
+  --color-card-dark: #1C1A18;
+  --color-text-dark-main: #F5F5F5;
+  --color-text-dark-muted: #A09E9B;
+
+  /* Arrondis généreux et pilules */
+  --radius-card: 24px;
+  --radius-input: 9999px;
+
+  /* Typographie */
+  --font-sans: 'Plus Jakarta Sans', 'Inter', sans-serif;
+}
+
+/* Optionnel : Si tu veux forcer des styles globaux par défaut */
+body {
+  background-color: var(--color-bg-light);
+  color: var(--color-text-light-main);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+@variant dark (&:where(.dark, .dark *));
