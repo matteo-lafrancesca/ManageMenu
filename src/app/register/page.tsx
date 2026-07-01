@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, ArrowRight, ChefHat, AlertCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 
 function RegisterContent() {
   const { user, register, loading: authLoading } = useAuth();
@@ -63,7 +63,7 @@ function RegisterContent() {
     return (
       <div className="flex h-dvh w-full items-center justify-center bg-bg-light dark:bg-bg-dark">
         <div className="flex flex-col items-center gap-3">
-          <ChefHat className="h-12 w-12 animate-bounce text-brand" />
+          <img src="/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
           <span className="text-sm font-medium text-text-light-muted dark:text-text-dark-muted">
             Chargement de la session...
           </span>
@@ -77,8 +77,8 @@ function RegisterContent() {
       <main className="w-full max-w-md flex flex-col gap-8">
         {/* En-tête / Logo */}
         <div className="flex flex-col items-center text-center gap-2">
-          <div className="flex items-center justify-center h-16 w-16 rounded-card bg-brand-light dark:bg-brand/10 text-brand shadow-sm">
-            <ChefHat className="h-9 w-9" />
+          <div className="flex items-center justify-center h-16 w-16 overflow-hidden rounded-card bg-brand-light dark:bg-brand/10 shadow-sm border border-neutral-200/50 dark:border-neutral-800/40">
+            <img src="/100.png" alt="Logo" className="h-full w-full object-cover" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-text-light-main dark:text-text-dark-main">
             ManageMenu
@@ -212,7 +212,7 @@ export default function RegisterPage() {
       fallback={
         <div className="flex h-dvh w-full items-center justify-center bg-bg-light dark:bg-bg-dark">
           <div className="flex flex-col items-center gap-3">
-            <ChefHat className="h-12 w-12 animate-bounce text-brand" />
+            <img src="/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
             <span className="text-sm font-medium text-text-light-muted dark:text-text-dark-muted">
               Chargement de la page...
             </span>

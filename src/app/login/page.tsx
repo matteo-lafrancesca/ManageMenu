@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Lock, ArrowRight, ChefHat, AlertCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 
 function LoginContent() {
   const { user, login, loading: authLoading } = useAuth();
@@ -51,7 +51,7 @@ function LoginContent() {
     return (
       <div className="flex h-dvh w-full items-center justify-center bg-bg-light dark:bg-bg-dark">
         <div className="flex flex-col items-center gap-3">
-          <ChefHat className="h-12 w-12 animate-bounce text-brand" />
+          <img src="/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
           <span className="text-sm font-medium text-text-light-muted dark:text-text-dark-muted">
             Chargement de la session...
           </span>
@@ -163,7 +163,7 @@ export default function LoginPage() {
       fallback={
         <div className="flex h-dvh w-full items-center justify-center bg-bg-light dark:bg-bg-dark">
           <div className="flex flex-col items-center gap-3">
-            <ChefHat className="h-12 w-12 animate-bounce text-brand" />
+            <img src="/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
             <span className="text-sm font-medium text-text-light-muted dark:text-text-dark-muted">
               Chargement de la page...
             </span>
