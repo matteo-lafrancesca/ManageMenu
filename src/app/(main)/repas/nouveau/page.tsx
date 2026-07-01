@@ -1,0 +1,861 @@
+'use client';
+
+import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { 
+  Plus, 
+  Trash2, 
+  ArrowUp, 
+  ArrowDown, 
+  Camera, 
+  Loader2, 
+  ChevronLeft, 
+  ChevronRight, 
+  Sparkles, 
+  Check, 
+  ArrowLeft,
+  Search,
+  PlusCircle,
+  Tag
+} from 'lucide-react';
+import Link from 'next/link';
+import { CATEGORY_DETAILS, CategorieIngredient, normalizeCategory } from '@/types';
+import { useUploadThing } from '@/lib/uploadthing';
+import Drawer from '@/components/Drawer';
+
+interface IngredientSuggestion {
+  id: number;
+  nom: string;
+  categorie: string;
+}
+
+interface SelectedIngredientItem {
+  id: string; // Client-side unique key
+  ingredientId?: number;
+  nom: string;
+  quantite: string;
+  unite: string;
+  categorie: CategorieIngredient;
+}
+
+interface StepItem {
+  id: string;
+  text: string;
+}
+
+export default function NouveauRepasPage() {
+  const router = useRouter();
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Step 1: Titre & Photo
+  const [titre, setTitre] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Revoke object URL on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+      }
+    };
+  }, [localPreviewUrl]);
+
+  // Step 2: Ingrédients du repas
+  const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredientItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<IngredientSuggestion[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // Drawer de création d'ingrédient manquant
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [newIngNom, setNewIngNom] = useState('');
+  const [newIngCategorie, setNewIngCategorie] = useState<CategorieIngredient>('epicerie-salee');
+  const [creatingIngredient, setCreatingIngredient] = useState(false);
+
+  // Step 3: Étapes de recette
+  const [steps, setSteps] = useState<StepItem[]>([{ id: 'init-step-1', text: '' }]);
+
+  // Uploadthing setup
+  const { startUpload, isUploading } = useUploadThing('imageUploader', {
+    onUploadError: (err) => {
+      setError(`Erreur lors de l'envoi de l'image: ${err.message}`);
+    }
+  });
+
+  // DB Autocomplete Search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        setSearching(true);
+        const res = await fetch(`/api/ingredients?search=${encodeURIComponent(searchQuery)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data);
+        }
+      } catch (err) {
+        console.error('Erreur autocomplete:', err);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  // Image Drag & Drop
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setError(null);
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+      }
+      setSelectedImageFile(file);
+      setLocalPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setError(null);
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+      }
+      setSelectedImageFile(file);
+      setLocalPreviewUrl(URL.createObjectURL(file));
+    } else {
+      setError("Seuls les fichiers d'image sont acceptés.");
+    }
+  };
+
+  // Add selected ingredient
+  const handleSelectIngredient = (ing: IngredientSuggestion) => {
+    // Avoid duplicates
+    if (selectedIngredients.some(item => item.ingredientId === ing.id || item.nom.toLowerCase() === ing.nom.toLowerCase())) {
+      setSearchQuery('');
+      setSearchResults([]);
+      return;
+    }
+
+    setSelectedIngredients([
+      ...selectedIngredients,
+      {
+        id: Math.random().toString(),
+        ingredientId: ing.id,
+        nom: ing.nom,
+        quantite: '',
+        unite: '',
+        categorie: ing.categorie as CategorieIngredient
+      }
+    ]);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const handleRemoveIngredient = (id: string) => {
+    setSelectedIngredients(selectedIngredients.filter(ing => ing.id !== id));
+  };
+
+  const updateMealIngredient = (id: string, field: 'quantite' | 'unite', value: string) => {
+    setSelectedIngredients(selectedIngredients.map(ing => 
+      ing.id === id ? { ...ing, [field]: value } : ing
+    ));
+  };
+
+  // Trigger Creation Drawer
+  const openCreateIngredientDrawer = (name: string) => {
+    setNewIngNom(name);
+    setNewIngCategorie(normalizeCategory(name));
+    setIsDrawerOpen(true);
+  };
+
+  // Handle Missing Ingredient Creation
+  const handleCreateIngredientSubmit = async () => {
+    if (!newIngNom.trim()) return;
+
+    try {
+      setCreatingIngredient(true);
+      const res = await fetch('/api/ingredients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nom: newIngNom.trim(),
+          categorie: newIngCategorie
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error("Impossible de créer l'ingrédient.");
+      }
+
+      const createdIngredient: IngredientSuggestion = await res.json();
+      
+      // Auto add to recipe
+      handleSelectIngredient(createdIngredient);
+      setIsDrawerOpen(false);
+    } catch (err: any) {
+      alert(err.message || "Une erreur est survenue lors de la création de l'ingrédient.");
+    } finally {
+      setCreatingIngredient(false);
+    }
+  };
+
+  // Step 3: Instructions helpers
+  const handleAddStep = () => {
+    setSteps([...steps, { id: Math.random().toString(), text: '' }]);
+  };
+
+  const handleRemoveStep = (id: string) => {
+    setSteps(steps.filter(s => s.id !== id));
+  };
+
+  const handleUpdateStep = (id: string, value: string) => {
+    setSteps(steps.map(s => s.id === id ? { ...s, text: value } : s));
+  };
+
+  const handleMoveStep = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === steps.length - 1) return;
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    const newSteps = [...steps];
+    const temp = newSteps[index];
+    newSteps[index] = newSteps[targetIdx];
+    newSteps[targetIdx] = temp;
+    setSteps(newSteps);
+  };
+
+  // Navigation validation
+  const validateStep = () => {
+    setError(null);
+    if (step === 1) {
+      if (!titre.trim()) {
+        setError('Le titre du repas est obligatoire.');
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (validateStep()) {
+      setStep(prev => (prev + 1) as 1 | 2 | 3);
+    }
+  };
+
+  const handlePrev = () => {
+    setError(null);
+    setStep(prev => (prev - 1) as 1 | 2 | 3);
+  };
+
+  // Submit Meal
+  const handleSubmit = async () => {
+    if (!validateStep()) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Defer image upload to Uploadthing
+      let finalPhotoUrl = photoUrl;
+      if (selectedImageFile) {
+        try {
+          const uploadRes = await startUpload([selectedImageFile]);
+          if (uploadRes && uploadRes[0]) {
+            finalPhotoUrl = uploadRes[0].url;
+          } else {
+            throw new Error("Le stockage n'a pas pu renvoyer d'adresse URL.");
+          }
+        } catch (err: any) {
+          throw new Error(`Échec du téléversement de l'image: ${err.message || err}`);
+        }
+      }
+
+      const mappedIngredients = selectedIngredients.map(ing => ({
+        nom: ing.nom.trim(),
+        quantite: ing.quantite.trim() ? parseFloat(ing.quantite) : null,
+        unite: ing.unite.trim() || null,
+        categorie: ing.categorie
+      }));
+
+      const cleanRecette = steps
+        .map(s => s.text.trim())
+        .filter(text => text !== '')
+        .join('\n');
+
+      const body = {
+        titre: titre.trim(),
+        recette: cleanRecette || null,
+        photoUrl: finalPhotoUrl || null,
+        ingredients: mappedIngredients
+      };
+
+      const res = await fetch('/api/repas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Erreur lors de la création du repas.');
+      }
+
+      router.push('/repas');
+    } catch (err: any) {
+      setError(err.message || 'Une erreur inattendue est survenue.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Search autocomplete status check
+  const exactMatchExists = searchResults.some(
+    r => r.nom.toLowerCase() === searchQuery.trim().toLowerCase()
+  );
+
+  return (
+    <div className="space-y-6 max-w-3xl mx-auto">
+      
+      {/* Header Breadcrumb */}
+      <div className="flex items-center gap-3">
+        <Link 
+          href="/repas"
+          className="p-2.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800/60 text-text-light-muted dark:text-text-dark-muted transition-colors active:scale-95 cursor-pointer"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <div>
+          <span className="text-xs font-bold text-text-light-muted dark:text-text-dark-muted uppercase tracking-wider">
+            Mes recettes
+          </span>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-text-light-main dark:text-text-dark-main">
+            Créer un repas
+          </h1>
+        </div>
+      </div>
+
+      {/* Main Container Card */}
+      <div className="bg-card-light dark:bg-card-dark border border-neutral-200/40 dark:border-neutral-800/40 rounded-card shadow-xs p-6 md:p-8 space-y-6">
+        
+        {/* Step Indicator Header */}
+        <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-neutral-800/20">
+          <span className="font-extrabold text-sm text-text-light-main dark:text-text-dark-main">
+            Étape {step} sur 3
+          </span>
+          <span className="text-xs font-bold text-text-light-muted dark:text-text-dark-muted">
+            {step === 1 ? 'Identité du repas' : step === 2 ? 'Ingrédients requis' : 'Mode de préparation'}
+          </span>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full bg-neutral-100 dark:bg-neutral-800/60 h-1.5 rounded-full overflow-hidden">
+          <div 
+            className="bg-brand h-full transition-all duration-500 ease-out" 
+            style={{ width: `${(step / 3) * 100}%` }}
+          />
+        </div>
+
+        {/* Error Notification */}
+        {error && (
+          <div className="p-4 text-sm font-semibold bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-xl border border-red-200/50 dark:border-red-900/40 animate-fade-in">
+            {error}
+          </div>
+        )}
+
+        {/* STEP 1: Title and Photo */}
+        {step === 1 && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-text-light-main dark:text-text-dark-main">
+                Nom du repas *
+              </label>
+              <input
+                type="text"
+                value={titre}
+                onChange={(e) => setTitre(e.target.value)}
+                placeholder="Ex: Tarte tatin, Filet mignon..."
+                className="w-full px-5 py-3 text-sm transition-all border outline-none bg-bg-light dark:bg-bg-dark border-neutral-200 dark:border-neutral-800 rounded-xl focus:border-brand dark:focus:border-brand focus:ring-1 focus:ring-brand text-text-light-main dark:text-text-dark-main placeholder:text-text-light-muted dark:placeholder:text-text-dark-muted font-semibold"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-text-light-main dark:text-text-dark-main">
+                Image d'illustration (Optionnel)
+              </label>
+
+              {(localPreviewUrl || photoUrl) ? (
+                <div className="relative w-full aspect-video rounded-card overflow-hidden group border border-neutral-200/30 dark:border-neutral-800/30">
+                  <img 
+                    src={localPreviewUrl || photoUrl || ''} 
+                    alt="Aperçu" 
+                    className="w-full h-full object-cover"
+                  />
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
+                      <Loader2 className="h-8 w-8 text-white animate-spin" />
+                      <span className="text-xs font-bold text-white animate-pulse">
+                        Téléversement en cours...
+                      </span>
+                    </div>
+                  )}
+                  {!isUploading && (
+                    <div className="absolute inset-0 bg-black/45 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-4 py-2 bg-white text-black text-xs font-bold rounded-input shadow-md hover:bg-neutral-100 transition-colors cursor-pointer"
+                      >
+                        Modifier
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedImageFile(null);
+                          setPhotoUrl(null);
+                          if (localPreviewUrl) {
+                            URL.revokeObjectURL(localPreviewUrl);
+                            setLocalPreviewUrl(null);
+                          }
+                          if (fileInputRef.current) fileInputRef.current.value = '';
+                        }}
+                        className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-input shadow-md hover:bg-red-700 transition-colors cursor-pointer"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => !isUploading && fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-card p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 min-h-[200px] ${
+                    isDragging 
+                      ? 'border-brand bg-brand-light/30 dark:bg-brand/5 scale-[1.01]' 
+                      : 'border-neutral-200 dark:border-neutral-800 hover:border-brand/40 bg-neutral-50/50 dark:bg-neutral-800/10'
+                  }`}
+                >
+                  {isUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-10 w-10 text-brand animate-spin" />
+                      <span className="text-xs font-bold text-text-light-muted dark:text-text-dark-muted animate-pulse">
+                        Téléversement de la photo...
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="p-4 bg-white dark:bg-neutral-800 rounded-full shadow-xs border border-neutral-100 dark:border-neutral-800 text-text-light-muted dark:text-text-dark-muted mb-3">
+                        <Camera className="h-6 w-6 stroke-[1.5]" />
+                      </div>
+                      <span className="text-sm font-bold text-text-light-main dark:text-text-dark-main">
+                        <span className="hidden md:inline">Glissez-déposez une image ou c</span>
+                        <span className="md:hidden">C</span>
+                        liquez pour parcourir
+                      </span>
+                      <span className="text-[11px] text-text-light-muted dark:text-text-dark-muted mt-1.5 font-medium">
+                        Formats acceptés : PNG, JPG, WEBP
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <input 
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+                disabled={isUploading}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: Ingredients */}
+        {step === 2 && (
+          <div className="space-y-6 animate-fade-in">
+            
+            {/* Search autocomplete bar */}
+            <div className="space-y-2 relative">
+              <label className="text-sm font-bold text-text-light-main dark:text-text-dark-main">
+                Ajouter un ingrédient
+              </label>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-text-light-muted dark:text-text-dark-muted" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setIsSearchFocused(false), 250)}
+                  placeholder="Rechercher un ingrédient (ex: Tomate, Crème fraîche...)"
+                  className="w-full pl-11 pr-5 py-3 text-sm transition-all border outline-none bg-bg-light dark:bg-bg-dark border-neutral-200/80 dark:border-neutral-800 rounded-xl focus:border-brand dark:focus:border-brand focus:ring-1 focus:ring-brand text-text-light-main dark:text-text-dark-main placeholder:text-text-light-muted dark:placeholder:text-text-dark-muted font-medium"
+                />
+              </div>
+
+              {/* Suggestions dropdown list */}
+              {isSearchFocused && searchQuery.trim() !== '' && (
+                <div className="absolute left-0 right-0 mt-1 bg-card-light dark:bg-card-dark border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-xl z-30 max-h-60 overflow-y-auto">
+                  
+                  {/* Results matching */}
+                  {searchResults.map((suggestion) => (
+                    <button
+                      key={suggestion.id}
+                      type="button"
+                      onClick={() => handleSelectIngredient(suggestion)}
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800/65 text-left text-text-light-main dark:text-text-dark-main font-semibold"
+                    >
+                      <span>{suggestion.nom}</span>
+                      <span className="text-[10px] text-brand px-2 py-0.5 bg-brand-light dark:bg-brand/10 border border-brand/15 rounded-full font-bold">
+                        {CATEGORY_DETAILS[suggestion.categorie as CategorieIngredient]?.label || suggestion.categorie}
+                      </span>
+                    </button>
+                  ))}
+
+                  {/* Loading spinner */}
+                  {searching && (
+                    <div className="flex items-center justify-center p-4 text-text-light-muted dark:text-text-dark-muted">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    </div>
+                  )}
+
+                  {/* Create custom ingredient trigger */}
+                  {!searching && !exactMatchExists && (
+                    <button
+                      type="button"
+                      onClick={() => openCreateIngredientDrawer(searchQuery)}
+                      className="w-full flex items-center justify-between px-4 py-3.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors border-t border-neutral-100/50 dark:border-neutral-850 cursor-pointer text-left"
+                    >
+                      <div className="flex items-center gap-3 text-text-light-main dark:text-text-dark-main">
+                        <div className="p-1.5 bg-brand-light dark:bg-brand/10 text-brand rounded-lg shrink-0">
+                          <Plus className="h-4.5 w-4.5" />
+                        </div>
+                        <span className="font-semibold">
+                          Ajouter <span className="font-extrabold text-brand">"{searchQuery}"</span> au dictionnaire
+                        </span>
+                      </div>
+                      <span className="text-[10px] uppercase font-extrabold px-2.5 py-1 bg-neutral-100 dark:bg-neutral-800 text-text-light-muted dark:text-text-dark-muted rounded-full">
+                        Nouveau
+                      </span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* List of currently selected ingredients */}
+            <div className="space-y-3">
+              <span className="text-sm font-bold text-text-light-main dark:text-text-dark-main block">
+                Ingrédients dans cette recette ({selectedIngredients.length})
+              </span>
+
+              {selectedIngredients.length === 0 ? (
+                <div className="text-center py-10 border border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl bg-neutral-50/10 dark:bg-neutral-800/5">
+                  <p className="text-xs font-semibold text-text-light-muted dark:text-text-dark-muted">
+                    Aucun ingrédient sélectionné. Utilisez la barre de recherche ci-dessus pour les ajouter.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-neutral-100 dark:divide-neutral-800/40">
+                  {selectedIngredients.map((ing) => (
+                    <div 
+                      key={ing.id} 
+                      className="flex items-center justify-between gap-3 py-3 animate-fade-in"
+                    >
+                      {/* Name of ingredient */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-text-light-main dark:text-text-dark-main truncate">
+                          {ing.nom}
+                        </p>
+                      </div>
+
+                      {/* Unified Quantity & Unit input group ("barre quantité") */}
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        <div className="flex items-center border border-neutral-200 dark:border-neutral-800 rounded-xl bg-card-light dark:bg-card-dark focus-within:border-brand overflow-hidden h-10 w-36 md:w-44 transition-all">
+                          {/* Quantity */}
+                          <input
+                            type="number"
+                            step="any"
+                            value={ing.quantite}
+                            onChange={(e) => updateMealIngredient(ing.id, 'quantite', e.target.value)}
+                            placeholder="Qté"
+                            className="w-14 md:w-18 px-2 text-xs font-semibold text-center border-none bg-transparent outline-none text-text-light-main dark:text-text-dark-main placeholder:text-text-light-muted dark:placeholder:text-text-dark-muted"
+                          />
+                          {/* Divider */}
+                          <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800" />
+                          {/* Unit */}
+                          <input
+                            type="text"
+                            value={ing.unite}
+                            onChange={(e) => updateMealIngredient(ing.id, 'unite', e.target.value)}
+                            placeholder="Unité"
+                            className="flex-1 min-w-0 px-2 text-xs font-semibold border-none bg-transparent outline-none text-text-light-main dark:text-text-dark-main placeholder:text-text-light-muted dark:placeholder:text-text-dark-muted"
+                          />
+                        </div>
+
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveIngredient(ing.id)}
+                          className="p-1.5 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer shrink-0"
+                          title="Supprimer l'ingrédient"
+                        >
+                          <Trash2 className="h-4.5 w-4.5" />
+                        </button>
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Recipe Steps */}
+        {step === 3 && (
+          <div className="space-y-4 animate-fade-in">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-bold text-text-light-main dark:text-text-dark-main">
+                Étapes de préparation ({steps.length})
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {steps.map((s, idx) => (
+                <div 
+                  key={s.id} 
+                  className="flex gap-3 items-start py-3 border-b border-neutral-100 dark:border-neutral-800/40 animate-fade-in"
+                >
+                  {/* Step Number Badge */}
+                  <span className="flex items-center justify-center shrink-0 w-6 h-6 rounded-full bg-brand-light dark:bg-brand/10 text-brand text-xs font-extrabold border border-brand/15 mt-1.5">
+                    {idx + 1}
+                  </span>
+
+                  {/* Step description */}
+                  <textarea
+                    value={s.text}
+                    onChange={(e) => handleUpdateStep(s.id, e.target.value)}
+                    placeholder={`Description de l'étape ${idx + 1}...`}
+                    rows={4}
+                    className="flex-1 px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-800 rounded-xl bg-card-light dark:bg-card-dark text-text-light-main dark:text-text-dark-main outline-none focus:border-brand font-medium min-h-[96px] resize-y"
+                  />
+
+                  {/* Actions tools */}
+                  <div className="flex flex-col gap-1.5 shrink-0 mt-1">
+                    {/* Move Up */}
+                    <button
+                      type="button"
+                      onClick={() => handleMoveStep(idx, 'up')}
+                      disabled={idx === 0}
+                      className="p-1 rounded-lg text-text-light-muted dark:text-text-dark-muted hover:bg-neutral-200 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                      title="Monter"
+                    >
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </button>
+
+                    {/* Move Down */}
+                    <button
+                      type="button"
+                      onClick={() => handleMoveStep(idx, 'down')}
+                      disabled={idx === steps.length - 1}
+                      className="p-1 rounded-lg text-text-light-muted dark:text-text-dark-muted hover:bg-neutral-200 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                      title="Descendre"
+                    >
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    </button>
+
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveStep(s.id)}
+                      className="p-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
+                      title="Supprimer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add step trigger */}
+            <button
+              type="button"
+              onClick={handleAddStep}
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 border border-dashed border-neutral-300 dark:border-neutral-800 rounded-2xl hover:border-brand/40 text-text-light-muted dark:text-text-dark-muted hover:text-brand font-bold text-sm transition-all duration-300 active:scale-98 cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Ajouter une étape</span>
+            </button>
+          </div>
+        )}
+
+        {/* Footer controls buttons */}
+        <div className="flex flex-col gap-2.5 pt-6 border-t border-neutral-100 dark:border-neutral-800/40 mt-4 w-full">
+          {step < 3 ? (
+            <button
+              type="button"
+              onClick={handleNext}
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-white text-white dark:text-neutral-900 rounded-input active:scale-95 transition-all duration-300 cursor-pointer shadow-xs"
+            >
+              <span>Suivant</span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 text-sm font-extrabold bg-brand hover:bg-brand-hover text-white rounded-input active:scale-95 transition-all duration-300 cursor-pointer shadow-md shadow-brand/20 disabled:opacity-60 disabled:pointer-events-none"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>{selectedImageFile && !photoUrl ? "Envoi de l'image..." : "Enregistrement..."}</span>
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  <span>Créer la recette</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {step > 1 ? (
+            <button
+              type="button"
+              onClick={handlePrev}
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold border border-neutral-200 dark:border-neutral-850 rounded-input hover:bg-neutral-50 dark:hover:bg-neutral-850 text-text-light-main dark:text-text-dark-main active:scale-95 transition-all duration-300 cursor-pointer"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span>Précédent</span>
+            </button>
+          ) : (
+            <Link
+              href="/repas"
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold border border-neutral-200 dark:border-neutral-850 rounded-input hover:bg-neutral-50 dark:hover:bg-neutral-850 text-text-light-main dark:text-text-dark-main active:scale-95 transition-all duration-300 cursor-pointer text-center animate-fade-in"
+            >
+              <span>Annuler</span>
+            </Link>
+          )}
+        </div>
+
+      </div>
+
+      {/* Drawer for creating missing ingredient on the fly */}
+      <Drawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        title={
+          <div className="flex items-center gap-2 text-brand">
+            <Tag className="h-5 w-5" />
+            <span className="font-extrabold text-lg">Nouvel ingrédient</span>
+          </div>
+        }
+        maxWidth="sm:max-w-md"
+      >
+        <div className="space-y-5">
+          <p className="text-xs text-text-light-muted dark:text-text-dark-muted font-medium leading-relaxed">
+            Cet ingrédient n'existe pas encore. Enregistrez-le pour pouvoir l'utiliser dans vos recettes.
+          </p>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-text-light-main dark:text-text-dark-main">
+              Nom de l'ingrédient
+            </label>
+            <input
+              type="text"
+              value={newIngNom}
+              onChange={(e) => setNewIngNom(e.target.value)}
+              placeholder="Nom de l'ingrédient"
+              className="w-full px-4 py-2.5 text-sm border outline-none bg-neutral-50/50 dark:bg-neutral-800/10 border-neutral-200 dark:border-neutral-800 rounded-xl text-text-light-main dark:text-text-dark-main font-semibold"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-text-light-main dark:text-text-dark-main">
+              Rayon / Catégorie du magasin *
+            </label>
+            <div className="grid grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1">
+              {Object.entries(CATEGORY_DETAILS).map(([key, details]) => {
+                const isSelected = newIngCategorie === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setNewIngCategorie(key as CategorieIngredient)}
+                    className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-xl border text-left transition-all duration-300 cursor-pointer ${
+                      isSelected
+                        ? 'bg-brand text-white border-brand shadow-xs shadow-brand/10'
+                        : 'bg-bg-light dark:bg-bg-dark text-text-light-main dark:text-text-dark-main border-neutral-200/60 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800/40'
+                    }`}
+                  >
+                    <span className="line-clamp-1">{details.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 pt-3 border-t border-neutral-100 dark:border-neutral-800/20">
+            <button
+              type="button"
+              onClick={() => setIsDrawerOpen(false)}
+              className="flex-1 px-4 py-2.5 text-xs font-bold border border-neutral-200 dark:border-neutral-850 rounded-input hover:bg-neutral-50 dark:hover:bg-neutral-800 text-text-light-main dark:text-text-dark-main active:scale-95 transition-all cursor-pointer text-center"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateIngredientSubmit}
+              disabled={creatingIngredient || !newIngNom.trim()}
+              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-extrabold bg-brand hover:bg-brand-hover text-white rounded-input active:scale-95 transition-all cursor-pointer shadow-sm shadow-brand/20 disabled:opacity-60 disabled:pointer-events-none"
+            >
+              {creatingIngredient ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Création...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  <span>Créer et ajouter</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Drawer>
+
+    </div>
+  );
+}

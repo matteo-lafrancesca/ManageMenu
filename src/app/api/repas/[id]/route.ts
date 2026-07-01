@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 import { normalizeCategory } from '@/types';
+import { UTApi } from 'uploadthing/server';
 
 interface IngredientInput {
   nom: string;
@@ -295,6 +296,20 @@ export async function DELETE(
         { error: "Vous n'êtes pas autorisé à supprimer ce repas." },
         { status: 403 }
       );
+    }
+
+    // Supprimer la photo sur Uploadthing si elle existe
+    if (repasExistant.photoUrl) {
+      try {
+        const urlParts = repasExistant.photoUrl.split('/');
+        const fileKey = urlParts[urlParts.length - 1];
+        if (fileKey) {
+          const utapi = new UTApi();
+          await utapi.deleteFiles(fileKey);
+        }
+      } catch (err) {
+        console.error("Erreur lors de la suppression de l'image sur Uploadthing:", err);
+      }
     }
 
     // Supprimer le repas (cascade gérée au niveau de Prisma/DB)

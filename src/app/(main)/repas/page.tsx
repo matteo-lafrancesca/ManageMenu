@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowUpDown, UtensilsCrossed } from 'lucide-react';
+import { Search, ArrowUpDown, UtensilsCrossed, Plus } from 'lucide-react';
+import Link from 'next/link';
 import { RepasWithIngredients } from '@/types';
 import RepasCard from '@/components/RepasCard';
 import RepasDetailModal from '@/components/RepasDetailModal';
@@ -88,9 +89,18 @@ export default function RepasPage() {
   return (
     <div className="space-y-6">
       {/* Top Header Section */}
-      <h1 className="text-3xl font-extrabold tracking-tight text-text-light-main dark:text-text-dark-main">
-        Mes repas
-      </h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-extrabold tracking-tight text-text-light-main dark:text-text-dark-main">
+          Mes repas
+        </h1>
+        <Link
+          href="/repas/nouveau"
+          className="flex items-center gap-2 px-4.5 py-2.5 text-sm font-bold bg-brand hover:bg-brand-hover text-white rounded-input hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-sm shadow-brand/20 cursor-pointer text-center"
+        >
+          <Plus className="h-4.5 w-4.5 shrink-0" />
+          <span>Nouveau repas</span>
+        </Link>
+      </div>
 
       {/* Toolbar / Search & Filter Controls */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-card-light dark:bg-card-dark p-4 rounded-card border border-neutral-200/40 dark:border-neutral-800/40 shadow-xs">
