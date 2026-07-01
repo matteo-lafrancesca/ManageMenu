@@ -43,7 +43,23 @@ export default function RootLayout({
     <html
       lang="fr"
       className={`${plusJakarta.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-bg-light text-text-light-main dark:bg-bg-dark dark:text-text-dark-main overflow-x-hidden font-sans transition-colors duration-300">
         <AuthProvider>
           {children}
