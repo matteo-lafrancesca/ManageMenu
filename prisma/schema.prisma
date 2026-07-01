@@ -1,0 +1,56 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           Int             @id @default(autoincrement())
+  email        String          @unique
+  passwordHash String          @map("password_hash")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  repas        Repas[]
+  programmation Programmation[]
+
+  @@map("users")
+}
+
+model Repas {
+  id            Int             @id @default(autoincrement())
+  userId        Int             @map("user_id")
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  titre         String
+  recette       String?
+  photoUrl      String?         @map("photo_url")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  ingredients   Ingredient[]
+  programmation Programmation[]
+
+  @@map("repas")
+}
+
+model Ingredient {
+  id        Int     @id @default(autoincrement())
+  repasId   Int     @map("repas_id")
+  repas     Repas   @relation(fields: [repasId], references: [id], onDelete: Cascade)
+  nom       String
+  quantite  String? // e.g., "400g", "2 cuillères"
+  categorie String  // e.g., "Frais", "Épicerie", "Condiments"
+
+  @@map("ingredients")
+}
+
+model Programmation {
+  id      Int      @id @default(autoincrement())
+  userId  Int      @map("user_id")
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repasId Int      @map("repas_id")
+  repas   Repas    @relation(fields: [repasId], references: [id], onDelete: Cascade)
+  date    DateTime
+  heure   Int      // 0 = midi, 1 = soir
+
+  @@map("programmation")
+}
