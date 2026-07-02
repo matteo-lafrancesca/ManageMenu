@@ -72,14 +72,16 @@ export default function RootLayout({
                 try {
                   var testEl = document.createElement('div');
                   testEl.style.cssText = 'position:fixed;bottom:0;height:0;padding-bottom:env(safe-area-inset-bottom,0px);';
-                  document.body.appendChild(testEl);
+                  var parent = document.body || document.documentElement;
+                  parent.appendChild(testEl);
                   safeBottom = parseFloat(getComputedStyle(testEl).paddingBottom) || 0;
-                  document.body.removeChild(testEl);
+                  parent.removeChild(testEl);
                 } catch(e) {}
                 var total = window.innerHeight + safeBottom;
                 document.documentElement.style.setProperty('--app-height', total + 'px');
               }
               setAppHeight();
+              window.addEventListener('DOMContentLoaded', setAppHeight);
               window.addEventListener('resize', setAppHeight);
               window.addEventListener('orientationchange', function() {
                 setTimeout(setAppHeight, 100);
