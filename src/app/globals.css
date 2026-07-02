@@ -32,6 +32,7 @@
 html,
 body {
   height: 100dvh;
+  height: -webkit-fill-available;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }
@@ -58,4 +59,10 @@ body {
 /* Padding bottom = hauteur de la home indicator iOS */
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hauteur disponible pour WebKit */
+@utility h-fill-available {
+  height: 100vh;
+  height: -webkit-fill-available;
 }
