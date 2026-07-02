@@ -29,7 +29,8 @@
 @variant dark (&:where(.dark, .dark *));
 
 :root {
-  --app-height: 100dvh; /* fallback tant que le JS n'a pas tourné */
+  --app-height: 100dvh;
+  /* fallback tant que le JS n'a pas tourné */
 }
 
 /* Base : couvre toujours tout l'écran physique, sans fond visible */
@@ -77,19 +78,14 @@ body {
   height: 100dvh;
 }
 
-html {
-  background-color: red !important;
-}
-
-body {
-  background-color: lime !important;
-}
-
 /* ─── Blocage d'orientation Paysage sur Mobile ─── */
 @keyframes rotate-phone {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: rotate(0deg);
   }
+
   50% {
     transform: rotate(90deg);
   }
