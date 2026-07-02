@@ -47,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="fr"
-      className={`${plusJakarta.variable} h-full overflow-hidden antialiased`}
+      className={`${plusJakarta.variable} antialiased`}
       suppressHydrationWarning
     >
       <head>
@@ -65,7 +65,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="h-full flex flex-col bg-bg-light text-text-light-main dark:bg-bg-dark dark:text-text-dark-main overflow-hidden font-sans transition-colors duration-300">
+      <body className="bg-bg-light text-text-light-main dark:bg-bg-dark dark:text-text-dark-main font-sans transition-colors duration-300">
         <AuthProvider>
           {children}
         </AuthProvider>

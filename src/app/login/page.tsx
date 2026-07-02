@@ -61,7 +61,14 @@ function LoginContent() {
   }
 
   return (
-    <div className="w-full h-dvh overflow-y-auto overscroll-behavior-y-contain bg-bg-light dark:bg-bg-dark transition-colors duration-300">
+    <div
+      className="w-full overflow-y-auto overscroll-none bg-bg-light dark:bg-bg-dark transition-colors duration-300"
+      style={{
+        minHeight: '100dvh',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
+    >
       <div className="flex min-h-full w-full items-center justify-center p-4">
         <main className="w-full max-w-md flex flex-col gap-8">
 

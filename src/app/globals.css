@@ -26,24 +26,46 @@
   --font-sans: 'Plus Jakarta Sans', 'Inter', sans-serif;
 }
 
-/* Optionnel : Si tu veux forcer des styles globaux par défaut */
+@variant dark (&:where(.dark, .dark *));
+
+/* Base : couvre toujours tout l'écran physique, sans fond visible */
+html,
+body {
+  height: 100%;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   background-color: var(--color-bg-light);
   color: var(--color-text-light-main);
   transition: background-color 0.3s, color 0.3s;
 }
 
-@variant dark (&:where(.dark, .dark *));
-
-/* Utilitaire de gestion des zones sécurisées (PWA) */
-@utility pb-safe {
-  padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+/* Dark mode : remplace le fond body pour ne pas voir de beige sous les safe areas */
+.dark body {
+  background-color: var(--color-bg-dark);
+  color: var(--color-text-dark-main);
 }
 
+/* ─── Utilitaires Safe Area PWA ─── */
+
+/* Padding top = hauteur de la status bar iOS */
 @utility pt-safe {
-  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
-@utility pt-content-safe {
-  padding-top: calc(56px + env(safe-area-inset-top, 0px));
+/* Padding bottom = hauteur de la home indicator iOS */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Padding top du contenu = hauteur header + status bar */
+@utility pt-content {
+  padding-top: calc(52px + env(safe-area-inset-top, 0px));
+}
+
+/* Padding bottom du contenu = hauteur tab bar + home indicator */
+@utility pb-content {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
 }
