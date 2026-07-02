@@ -113,4 +113,13 @@ body {
     color: var(--color-text-dark-main);
   }
 }
+
+/* Empêcher le zoom automatique d'iOS Safari au focus des inputs */
+@media screen and (max-width: 1024px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
 
