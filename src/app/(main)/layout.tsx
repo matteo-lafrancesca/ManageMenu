@@ -94,13 +94,7 @@ export default function MainLayout({
   }
 
   return (
-    <div
-      className="fixed left-0 right-0 flex flex-col overflow-hidden bg-bg-light dark:bg-bg-dark text-text-light-main dark:text-text-dark-main transition-colors duration-300"
-      style={{
-        top: 'env(safe-area-inset-top, 0px)',
-        bottom: 'calc(0px - env(safe-area-inset-top, 0px))',
-      }}
-    >
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-bg-light dark:bg-bg-dark text-text-light-main dark:text-text-dark-main transition-colors duration-300">
       {/* 💻 NAVIGATION DESKTOP : Sidebar */}
       <aside className="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 bg-card-light dark:bg-card-dark border-r border-neutral-200/50 dark:border-neutral-800/40 p-6 z-40 transition-all duration-300">
         {/* En-tête / Logo */}
@@ -187,15 +181,14 @@ export default function MainLayout({
         </div>
       </aside>
 
+      {/* 📱 MOBILE : Spacer pour la barre de statut iOS en PWA (Safe Area) */}
+      <div className="h-[env(safe-area-inset-top,0px)] bg-bg-light dark:bg-bg-dark shrink-0 md:hidden" />
+
       {/* ─────────────────────────────────────────────────
           📱 MOBILE : Header dans le flux
-          - padding-top absorbe la status bar iOS (safe-area-inset-top)
-          - Le fond s'étend visuellement derrière la status bar
+          - Hauteur fixe de 56px (h-14) sans agrandissement
       ───────────────────────────────────────────────── */}
-      <header
-        className="flex md:hidden items-center justify-between px-5 bg-card-light dark:bg-card-dark border-b border-neutral-200/50 dark:border-neutral-800/40 transition-colors duration-300 shrink-0"
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)', height: 'calc(56px + env(safe-area-inset-top, 0px))' }}
-      >
+      <header className="flex md:hidden items-center justify-between px-5 h-14 bg-card-light dark:bg-card-dark border-b border-neutral-200/50 dark:border-neutral-800/40 transition-colors duration-300 shrink-0">
         <div className="flex items-center gap-2.5">
           <div className="flex items-center justify-center h-8 w-8 overflow-hidden rounded-lg bg-brand-light dark:bg-brand/10 border border-neutral-200/50 dark:border-neutral-800/40">
             <img src="/menumanage/100.png" alt="Logo" className="h-full w-full object-cover" />
