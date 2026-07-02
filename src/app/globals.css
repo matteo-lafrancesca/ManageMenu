@@ -34,3 +34,16 @@ body {
 }
 
 @variant dark (&:where(.dark, .dark *));
+
+/* Utilitaire de gestion des zones sécurisées (PWA) */
+@utility pb-safe {
+  padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+}
+
+@utility pt-safe {
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+}
+
+@utility pt-content-safe {
+  padding-top: calc(56px + env(safe-area-inset-top, 0px));
+}
