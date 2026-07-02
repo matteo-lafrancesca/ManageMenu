@@ -5,7 +5,7 @@ import { jwtVerify } from 'jose';
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-at-least-32-chars-long';
 const key = new TextEncoder().encode(JWT_SECRET);
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Récupérer le token depuis les cookies
@@ -29,7 +29,9 @@ export async function middleware(request: NextRequest) {
   // on le redirige vers la page d'accueil.
   if (isAuthPage) {
     if (isAuthenticated) {
-      return NextResponse.redirect(new URL('/', request.url));
+      const homeUrl = request.nextUrl.clone();
+      homeUrl.pathname = '/';
+      return NextResponse.redirect(homeUrl);
     }
     return NextResponse.next();
   }
@@ -44,7 +46,8 @@ export async function middleware(request: NextRequest) {
       );
     }
     // Sinon, on redirige vers la page de connexion
-    const loginUrl = new URL('/login', request.url);
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = '/login';
     loginUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(loginUrl);
   }

@@ -84,7 +84,7 @@ export default function MainLayout({
     return (
       <div className="flex h-dvh w-full items-center justify-center bg-bg-light dark:bg-bg-dark">
         <div className="flex flex-col items-center gap-3">
-          <img src="/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
+          <img src="/menumanage/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
           <span className="text-sm font-medium text-text-light-muted dark:text-text-dark-muted animate-pulse">
             Chargement de votre espace...
           </span>
@@ -101,7 +101,7 @@ export default function MainLayout({
         {/* En-tête / Logo */}
         <div className="flex items-center gap-3 mb-10 px-2">
           <div className="flex items-center justify-center h-10 w-10 overflow-hidden rounded-xl bg-brand-light dark:bg-brand/10 shadow-sm border border-neutral-200/50 dark:border-neutral-800/40">
-            <img src="/100.png" alt="Logo" className="h-full w-full object-cover" />
+            <img src="/menumanage/100.png" alt="Logo" className="h-full w-full object-cover" />
           </div>
           <span className="text-xl font-bold tracking-tight text-text-light-main dark:text-text-dark-main">
             ManageMenu
@@ -187,7 +187,7 @@ export default function MainLayout({
       <header className="flex md:hidden items-center justify-between px-6 py-4 bg-card-light/80 dark:bg-card-dark/80 backdrop-blur-md border-b border-neutral-200/50 dark:border-neutral-800/40 fixed top-0 w-full z-40 transition-colors duration-300">
         <div className="flex items-center gap-2.5">
           <div className="flex items-center justify-center h-8 w-8 overflow-hidden rounded-lg bg-brand-light dark:bg-brand/10 border border-neutral-200/50 dark:border-neutral-800/40">
-            <img src="/100.png" alt="Logo" className="h-full w-full object-cover" />
+            <img src="/menumanage/100.png" alt="Logo" className="h-full w-full object-cover" />
           </div>
           <span className="text-lg font-bold tracking-tight text-text-light-main dark:text-text-dark-main">
             ManageMenu

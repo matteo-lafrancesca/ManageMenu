@@ -51,7 +51,7 @@ function LoginContent() {
     return (
       <div className="flex h-dvh w-full items-center justify-center bg-bg-light dark:bg-bg-dark">
         <div className="flex flex-col items-center gap-3">
-          <img src="/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
+          <img src="/menumanage/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
           <span className="text-sm font-medium text-text-light-muted dark:text-text-dark-muted">
             Chargement de la session...
           </span>
@@ -163,7 +163,7 @@ export default function LoginPage() {
       fallback={
         <div className="flex h-dvh w-full items-center justify-center bg-bg-light dark:bg-bg-dark">
           <div className="flex flex-col items-center gap-3">
-            <img src="/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
+            <img src="/menumanage/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
             <span className="text-sm font-medium text-text-light-muted dark:text-text-dark-muted">
               Chargement de la page...
             </span>

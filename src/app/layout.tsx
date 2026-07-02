@@ -19,11 +19,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/menumanage/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/menumanage/favicon-16.png", sizes: "16x16", type: "image/png" },
     ],
     apple: [
-      { url: "/180.png", sizes: "180x180", type: "image/png" },
+      { url: "/menumanage/180.png", sizes: "180x180", type: "image/png" },
     ],
   },
 };
@@ -72,7 +72,7 @@ export default function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(
+                  navigator.serviceWorker.register('/menumanage/sw.js', { scope: '/menumanage/' }).then(
                     function(reg) {
                       console.log('Service Worker registered successfully with scope: ', reg.scope);
                     },

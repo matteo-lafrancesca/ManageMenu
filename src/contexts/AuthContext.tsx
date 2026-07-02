@@ -3,6 +3,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+// Interception globale de fetch côté client pour injecter le basePath /menumanage sur les API
+if (typeof window !== 'undefined') {
+  const originalFetch = window.fetch;
+  window.fetch = function (input, init) {
+    if (typeof input === 'string' && input.startsWith('/api/')) {
+      return originalFetch(`/menumanage${input}`, init);
+    }
+    return originalFetch(input, init);
+  };
+}
+
 interface User {
   id: number;
   email: string;

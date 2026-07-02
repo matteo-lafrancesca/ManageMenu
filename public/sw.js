@@ -1,10 +1,10 @@
 const CACHE_NAME = 'menu-manage-v1';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/manifest.json',
-  '/favicon.ico',
-  '/192.png',
-  '/512.png'
+  './',
+  'manifest.json',
+  'favicon-32.png',
+  '192.png',
+  '512.png'
 ];
 
 // Install Event: cache core assets
