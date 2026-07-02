@@ -19,7 +19,7 @@ export type ShoppingListItem = PrismaShoppingListItem;
 export const CATEGORY_DETAILS = {
   'fruits-legumes': { label: 'Fruits & Légumes', order: 1 },
   'boucherie-poissonnerie': { label: 'Boucherie & Poissonnerie', order: 2 },
-  'charcuterie-traiteur': { label: 'Charcuterie & Traiteur', order: 3 },
+  'frais': { label: 'Rayon Frais', order: 3 },
   'produits-laitiers': { label: 'Produits Laitiers & Œufs', order: 4 },
   'boulangerie-patisserie': { label: 'Boulangerie & Pâtisserie', order: 5 },
   'epicerie-salee': { label: 'Épicerie Salée', order: 6 },
@@ -40,24 +40,55 @@ export function normalizeCategory(category: string): CategorieIngredient {
   if (normalized.includes('fruit') || normalized.includes('legume') || normalized.includes('légume')) {
     return 'fruits-legumes';
   }
-  if (normalized.includes('viande') || normalized.includes('poisson') || normalized.includes('boucherie') || normalized.includes('volaille')) {
+  if (
+    normalized.includes('viande') || 
+    normalized.includes('poisson') || 
+    normalized.includes('boucherie') || 
+    normalized.includes('volaille') ||
+    normalized.includes('charcuterie') ||
+    normalized.includes('jambon') ||
+    normalized.includes('saucisson') ||
+    normalized.includes('bacon') ||
+    normalized.includes('lardon') ||
+    normalized.includes('pâté') ||
+    normalized.includes('pate') && (normalized.includes('campagne') || normalized.includes('croûte') || normalized.includes('croute')) ||
+    normalized.includes('rillettes') ||
+    normalized.includes('boudin') ||
+    normalized.includes('knacki') ||
+    normalized.includes('chorizo') ||
+    normalized.includes('mortadelle') ||
+    normalized.includes('pancetta') ||
+    normalized.includes('coppa')
+  ) {
     return 'boucherie-poissonnerie';
-  }
-  if (normalized.includes('charcuterie') || normalized.includes('traiteur')) {
-    return 'charcuterie-traiteur';
   }
   if (
     normalized.includes('lait') || 
     normalized.includes('fromage') || 
     normalized.includes('oeuf') || 
     normalized.includes('œuf') || 
-    normalized === 'frais' || 
     normalized.includes('crème') || 
     normalized.includes('creme') ||
     normalized.includes('yaourt') ||
     normalized.includes('beurre')
   ) {
     return 'produits-laitiers';
+  }
+  if (
+    normalized === 'frais' ||
+    normalized.includes('traiteur') ||
+    normalized.includes('gnocchi') ||
+    normalized.includes('ravioli') ||
+    normalized.includes('galette') ||
+    normalized.includes('crêpe') ||
+    normalized.includes('crepe') ||
+    normalized.includes('tofu') ||
+    normalized.includes('pâte feuilletée') ||
+    normalized.includes('pâte brisée') ||
+    normalized.includes('pâte sablée') ||
+    normalized.includes('pizza')
+  ) {
+    return 'frais';
   }
   if (normalized.includes('boulangerie') || normalized.includes('pain') || normalized.includes('patisserie') || normalized.includes('pâtisserie')) {
     return 'boulangerie-patisserie';

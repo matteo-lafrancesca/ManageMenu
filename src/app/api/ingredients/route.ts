@@ -17,19 +17,29 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search')?.trim() || '';
 
-    const ingredients = await db.ingredient.findMany({
-      where: {
-        nom: {
-          contains: search,
-        },
-      },
-      take: 10, // Limite aux 10 premiers résultats
+    const allIngredients = await db.ingredient.findMany({
       orderBy: {
         nom: 'asc',
       },
     });
 
-    return NextResponse.json(ingredients);
+    let filtered = allIngredients;
+    if (search) {
+      const cleanSearch = search
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+      filtered = allIngredients.filter((ing) => {
+        const cleanNom = ing.nom
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+        return cleanNom.includes(cleanSearch);
+      });
+    }
+
+    return NextResponse.json(filtered.slice(0, 10));
   } catch (error) {
     console.error('Erreur GET /api/ingredients:', error);
     return NextResponse.json({ error: 'Erreur interne du serveur' }, { status: 500 });

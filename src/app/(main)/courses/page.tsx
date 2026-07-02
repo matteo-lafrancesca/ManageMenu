@@ -11,7 +11,7 @@ import {
   Cookie, 
   GlassWater, 
   Snowflake,
-  ChefHat,
+  Refrigerator,
   ChevronLeft,
   ChevronRight,
   CalendarDays,
@@ -42,7 +42,7 @@ interface CategoryGroup {
 const CATEGORY_ICONS: Record<CategorieIngredient, React.ComponentType<{ className?: string }>> = {
   'fruits-legumes': Carrot,
   'boucherie-poissonnerie': Beef,
-  'charcuterie-traiteur': ChefHat,
+  'frais': Refrigerator,
   'produits-laitiers': Egg,
   'boulangerie-patisserie': Croissant,
   'epicerie-salee': Soup,
