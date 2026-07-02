@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface DrawerProps {
@@ -108,7 +109,7 @@ export default function Drawer({
     ? { transform: `translateY(${dragOffset}px)`, transition: 'none' }
     : {};
 
-  return (
+  return createPortal(
     <div className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center transition-all duration-300 ${
       visible ? 'pointer-events-auto' : 'pointer-events-none'
     }`}>
@@ -182,6 +183,7 @@ export default function Drawer({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

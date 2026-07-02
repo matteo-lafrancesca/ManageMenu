@@ -31,8 +31,8 @@
 /* Base : couvre toujours tout l'écran physique, sans fond visible */
 html,
 body {
-  height: 100dvh;
   height: -webkit-fill-available;
+  height: 100dvh;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }
@@ -63,6 +63,6 @@ body {
 
 /* Hauteur disponible pour WebKit */
 @utility h-fill-available {
-  height: 100vh;
   height: -webkit-fill-available;
+  height: 100dvh;
 }
