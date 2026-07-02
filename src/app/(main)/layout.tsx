@@ -82,7 +82,7 @@ export default function MainLayout({
 
   if (loading) {
     return (
-      <div className="flex h-dvh w-full items-center justify-center bg-bg-light dark:bg-bg-dark">
+      <div className="fixed inset-0 flex items-center justify-center bg-bg-light dark:bg-bg-dark">
         <div className="flex flex-col items-center gap-3">
           <img src="/menumanage/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
           <span className="text-sm font-medium text-text-light-muted dark:text-text-dark-muted animate-pulse">
@@ -95,8 +95,7 @@ export default function MainLayout({
 
   return (
     <div
-      className="flex flex-col overflow-hidden bg-bg-light dark:bg-bg-dark text-text-light-main dark:text-text-dark-main transition-colors duration-300"
-      style={{ height: '100%' }}
+      className="fixed inset-0 flex flex-col overflow-hidden bg-bg-light dark:bg-bg-dark text-text-light-main dark:text-text-dark-main transition-colors duration-300"
     >
 
       {/* 💻 NAVIGATION DESKTOP : Sidebar */}
