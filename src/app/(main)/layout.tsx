@@ -31,10 +31,31 @@ export default function MainLayout({
 
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [debugInfo, setDebugInfo] = useState('Initialisation debug...');
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains('dark');
     setTheme(isDark ? 'dark' : 'light');
+  }, []);
+
+  useEffect(() => {
+    const updateDebug = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches;
+      // @ts-ignore
+      const iosStandalone = window.navigator.standalone;
+      const appHeight = getComputedStyle(document.documentElement).getPropertyValue('--app-height');
+      const info = `standalone(css): ${standalone} | iosStandalone: ${iosStandalone} | innerHeight: ${window.innerHeight}px | visualVP: ${window.visualViewport ? window.visualViewport.height + 'px' : 'n/a'} | appHeight: ${appHeight}`;
+      setDebugInfo(info);
+    };
+
+    updateDebug();
+    window.addEventListener('resize', updateDebug);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(updateDebug, 150);
+    });
+    return () => {
+      window.removeEventListener('resize', updateDebug);
+    };
   }, []);
 
   const toggleTheme = () => {
@@ -101,7 +122,7 @@ export default function MainLayout({
       <div
         style={{
           position: 'fixed',
-          top: 0,
+          top: '45px',
           left: 0,
           zIndex: 9999,
           background: 'black',
@@ -113,7 +134,7 @@ export default function MainLayout({
         }}
         id="debug-overlay"
       >
-        debug
+        {debugInfo}
       </div>
       {/* 💻 NAVIGATION DESKTOP : Sidebar */}
       <aside className="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 bg-card-light dark:bg-card-dark border-r border-neutral-200/50 dark:border-neutral-800/40 p-6 z-40 transition-all duration-300">
