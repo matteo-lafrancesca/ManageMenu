@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
-  ChevronLeft, 
-  ChevronRight, 
   Plus, 
   Utensils, 
   CalendarDays,
@@ -13,6 +11,7 @@ import {
 import { ProgrammationWithRepas, RepasWithIngredients } from '@/types';
 import { getDaysOfWeek, FRENCH_DAYS, getISOWeekAndYear } from '@/lib/date-utils';
 import RepasDetailModal from '@/components/RepasDetailModal';
+import WeekSelector from '@/components/WeekSelector';
 
 export default function PlanificationPage() {
   const router = useRouter();
@@ -226,32 +225,13 @@ export default function PlanificationPage() {
 
       {/* Week Selector Bar */}
       {weekInfo && currentWeek && currentYear && (
-        <div className="flex items-center justify-between p-3 bg-card-light dark:bg-card-dark rounded-card border border-neutral-200/40 dark:border-neutral-800/40 shadow-xs">
-          <button
-            onClick={handlePrevWeek}
-            aria-label="Semaine précédente"
-            className="p-2.5 rounded-full hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors border border-neutral-200/30 dark:border-neutral-800/20 text-text-light-main dark:text-text-dark-main cursor-pointer"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          
-          <div className="text-center">
-            <span className="block text-sm font-extrabold text-text-light-main dark:text-text-dark-main">
-              Semaine {currentWeek}
-            </span>
-            <span className="block text-xs font-medium text-text-light-muted dark:text-text-dark-muted">
-              {formatDateRange(weekInfo.start, weekInfo.end)}
-            </span>
-          </div>
-
-          <button
-            onClick={handleNextWeek}
-            aria-label="Semaine suivante"
-            className="p-2.5 rounded-full hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors border border-neutral-200/30 dark:border-neutral-800/20 text-text-light-main dark:text-text-dark-main cursor-pointer"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </div>
+        <WeekSelector
+          week={currentWeek}
+          year={currentYear}
+          dateRange={formatDateRange(weekInfo.start, weekInfo.end)}
+          onPrev={handlePrevWeek}
+          onNext={handleNextWeek}
+        />
       )}
 
       {/* Main Grid Content Area */}

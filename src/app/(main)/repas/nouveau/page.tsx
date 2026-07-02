@@ -14,29 +14,13 @@ import {
   Sparkles, 
   Check, 
   ArrowLeft,
-  Search,
-  PlusCircle,
-  Tag
 } from 'lucide-react';
 import Link from 'next/link';
-import { CATEGORY_DETAILS, CategorieIngredient, normalizeCategory } from '@/types';
+import { CategorieIngredient } from '@/types';
 import { useUploadThing } from '@/lib/uploadthing';
-import Drawer from '@/components/Drawer';
-
-interface IngredientSuggestion {
-  id: number;
-  nom: string;
-  categorie: string;
-}
-
-interface SelectedIngredientItem {
-  id: string; // Client-side unique key
-  ingredientId?: number;
-  nom: string;
-  quantite: string;
-  unite: string;
-  categorie: CategorieIngredient;
-}
+import IngredientSearchInput, { IngredientSuggestion } from '@/components/IngredientSearchInput';
+import IngredientRow, { IngredientRowItem } from '@/components/IngredientRow';
+import CreateIngredientDrawer from '@/components/CreateIngredientDrawer';
 
 interface StepItem {
   id: string;
@@ -67,17 +51,11 @@ export default function NouveauRepasPage() {
   }, [localPreviewUrl]);
 
   // Step 2: Ingrédients du repas
-  const [selectedIngredients, setSelectedIngredients] = useState<SelectedIngredientItem[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<IngredientSuggestion[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [selectedIngredients, setSelectedIngredients] = useState<IngredientRowItem[]>([]);
 
   // Drawer de création d'ingrédient manquant
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [newIngNom, setNewIngNom] = useState('');
-  const [newIngCategorie, setNewIngCategorie] = useState<CategorieIngredient>('epicerie-salee');
-  const [creatingIngredient, setCreatingIngredient] = useState(false);
+  const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
+  const [newIngredientInitialName, setNewIngredientInitialName] = useState('');
 
   // Step 3: Étapes de recette
   const [steps, setSteps] = useState<StepItem[]>([{ id: 'init-step-1', text: '' }]);
@@ -88,31 +66,6 @@ export default function NouveauRepasPage() {
       setError(`Erreur lors de l'envoi de l'image: ${err.message}`);
     }
   });
-
-  // DB Autocomplete Search
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    const delayDebounceFn = setTimeout(async () => {
-      try {
-        setSearching(true);
-        const res = await fetch(`/api/ingredients?search=${encodeURIComponent(searchQuery)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data);
-        }
-      } catch (err) {
-        console.error('Erreur autocomplete:', err);
-      } finally {
-        setSearching(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
 
   // Image Drag & Drop
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,9 +108,9 @@ export default function NouveauRepasPage() {
   // Add selected ingredient
   const handleSelectIngredient = (ing: IngredientSuggestion) => {
     // Avoid duplicates
-    if (selectedIngredients.some(item => item.ingredientId === ing.id || item.nom.toLowerCase() === ing.nom.toLowerCase())) {
-      setSearchQuery('');
-      setSearchResults([]);
+    if (selectedIngredients.some(
+      (item) => item.ingredientId === ing.id || item.nom.toLowerCase() === ing.nom.toLowerCase()
+    )) {
       return;
     }
 
@@ -172,8 +125,6 @@ export default function NouveauRepasPage() {
         categorie: ing.categorie as CategorieIngredient
       }
     ]);
-    setSearchQuery('');
-    setSearchResults([]);
   };
 
   const handleRemoveIngredient = (id: string) => {
@@ -188,40 +139,13 @@ export default function NouveauRepasPage() {
 
   // Trigger Creation Drawer
   const openCreateIngredientDrawer = (name: string) => {
-    setNewIngNom(name);
-    setNewIngCategorie(normalizeCategory(name));
-    setIsDrawerOpen(true);
+    setNewIngredientInitialName(name);
+    setIsCreateDrawerOpen(true);
   };
 
   // Handle Missing Ingredient Creation
-  const handleCreateIngredientSubmit = async () => {
-    if (!newIngNom.trim()) return;
-
-    try {
-      setCreatingIngredient(true);
-      const res = await fetch('/api/ingredients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nom: newIngNom.trim(),
-          categorie: newIngCategorie
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error("Impossible de créer l'ingrédient.");
-      }
-
-      const createdIngredient: IngredientSuggestion = await res.json();
-      
-      // Auto add to recipe
-      handleSelectIngredient(createdIngredient);
-      setIsDrawerOpen(false);
-    } catch (err: any) {
-      alert(err.message || "Une erreur est survenue lors de la création de l'ingrédient.");
-    } finally {
-      setCreatingIngredient(false);
-    }
+  const handleIngredientCreated = (createdIngredient: IngredientSuggestion) => {
+    handleSelectIngredient(createdIngredient);
   };
 
   // Step 3: Instructions helpers
@@ -332,11 +256,6 @@ export default function NouveauRepasPage() {
     }
   };
 
-  // Search autocomplete status check
-  const exactMatchExists = searchResults.some(
-    r => r.nom.toLowerCase() === searchQuery.trim().toLowerCase()
-  );
-
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       
@@ -404,7 +323,7 @@ export default function NouveauRepasPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-text-light-main dark:text-text-dark-main">
-                Image d'illustration (Optionnel)
+                Image d&apos;illustration (Optionnel)
               </label>
 
               {(localPreviewUrl || photoUrl) ? (
@@ -502,73 +421,12 @@ export default function NouveauRepasPage() {
         {step === 2 && (
           <div className="space-y-6 animate-fade-in">
             
-            {/* Search autocomplete bar */}
-            <div className="space-y-2 relative">
-              <label className="text-sm font-bold text-text-light-main dark:text-text-dark-main">
-                Ajouter un ingrédient
-              </label>
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-text-light-muted dark:text-text-dark-muted" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setTimeout(() => setIsSearchFocused(false), 250)}
-                  placeholder="Rechercher un ingrédient (ex: Tomate, Crème fraîche...)"
-                  className="w-full pl-11 pr-5 py-3 text-sm transition-all border outline-none bg-bg-light dark:bg-bg-dark border-neutral-200/80 dark:border-neutral-800 rounded-xl focus:border-brand dark:focus:border-brand focus:ring-1 focus:ring-brand text-text-light-main dark:text-text-dark-main placeholder:text-text-light-muted dark:placeholder:text-text-dark-muted font-medium"
-                />
-              </div>
-
-              {/* Suggestions dropdown list */}
-              {isSearchFocused && searchQuery.trim() !== '' && (
-                <div className="absolute left-0 right-0 mt-1 bg-card-light dark:bg-card-dark border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-xl z-30 max-h-60 overflow-y-auto">
-                  
-                  {/* Results matching */}
-                  {searchResults.map((suggestion) => (
-                    <button
-                      key={suggestion.id}
-                      type="button"
-                      onClick={() => handleSelectIngredient(suggestion)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800/65 text-left text-text-light-main dark:text-text-dark-main font-semibold"
-                    >
-                      <span>{suggestion.nom}</span>
-                      <span className="text-[10px] text-brand px-2 py-0.5 bg-brand-light dark:bg-brand/10 border border-brand/15 rounded-full font-bold">
-                        {CATEGORY_DETAILS[suggestion.categorie as CategorieIngredient]?.label || suggestion.categorie}
-                      </span>
-                    </button>
-                  ))}
-
-                  {/* Loading spinner */}
-                  {searching && (
-                    <div className="flex items-center justify-center p-4 text-text-light-muted dark:text-text-dark-muted">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    </div>
-                  )}
-
-                  {/* Create custom ingredient trigger */}
-                  {!searching && !exactMatchExists && (
-                    <button
-                      type="button"
-                      onClick={() => openCreateIngredientDrawer(searchQuery)}
-                      className="w-full flex items-center justify-between px-4 py-3.5 text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors border-t border-neutral-100/50 dark:border-neutral-850 cursor-pointer text-left"
-                    >
-                      <div className="flex items-center gap-3 text-text-light-main dark:text-text-dark-main">
-                        <div className="p-1.5 bg-brand-light dark:bg-brand/10 text-brand rounded-lg shrink-0">
-                          <Plus className="h-4.5 w-4.5" />
-                        </div>
-                        <span className="font-semibold">
-                          Ajouter <span className="font-extrabold text-brand">"{searchQuery}"</span> au dictionnaire
-                        </span>
-                      </div>
-                      <span className="text-[10px] uppercase font-extrabold px-2.5 py-1 bg-neutral-100 dark:bg-neutral-800 text-text-light-muted dark:text-text-dark-muted rounded-full">
-                        Nouveau
-                      </span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+            {/* Ingredient search autocomplete */}
+            <IngredientSearchInput
+              onSelect={handleSelectIngredient}
+              onCreateNew={openCreateIngredientDrawer}
+              existingIngredients={selectedIngredients}
+            />
 
             {/* List of currently selected ingredients */}
             <div className="space-y-3">
@@ -585,53 +443,12 @@ export default function NouveauRepasPage() {
               ) : (
                 <div className="divide-y divide-neutral-100 dark:divide-neutral-800/40">
                   {selectedIngredients.map((ing) => (
-                    <div 
-                      key={ing.id} 
-                      className="flex items-center justify-between gap-3 py-3 animate-fade-in"
-                    >
-                      {/* Name of ingredient */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-text-light-main dark:text-text-dark-main truncate">
-                          {ing.nom}
-                        </p>
-                      </div>
-
-                      {/* Unified Quantity & Unit input group ("barre quantité") */}
-                      <div className="flex items-center gap-2.5 shrink-0">
-                        <div className="flex items-center border border-neutral-200 dark:border-neutral-800 rounded-xl bg-card-light dark:bg-card-dark focus-within:border-brand overflow-hidden h-10 w-36 md:w-44 transition-all">
-                          {/* Quantity */}
-                          <input
-                            type="number"
-                            step="any"
-                            value={ing.quantite}
-                            onChange={(e) => updateMealIngredient(ing.id, 'quantite', e.target.value)}
-                            placeholder="Qté"
-                            className="w-14 md:w-18 px-2 text-xs font-semibold text-center border-none bg-transparent outline-none text-text-light-main dark:text-text-dark-main placeholder:text-text-light-muted dark:placeholder:text-text-dark-muted"
-                          />
-                          {/* Divider */}
-                          <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800" />
-                          {/* Unit */}
-                          <input
-                            type="text"
-                            value={ing.unite}
-                            onChange={(e) => updateMealIngredient(ing.id, 'unite', e.target.value)}
-                            placeholder="Unité"
-                            className="flex-1 min-w-0 px-2 text-xs font-semibold border-none bg-transparent outline-none text-text-light-main dark:text-text-dark-main placeholder:text-text-light-muted dark:placeholder:text-text-dark-muted"
-                          />
-                        </div>
-
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveIngredient(ing.id)}
-                          className="p-1.5 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer shrink-0"
-                          title="Supprimer l'ingrédient"
-                        >
-                          <Trash2 className="h-4.5 w-4.5" />
-                        </button>
-                      </div>
-
-                    </div>
+                    <IngredientRow
+                      key={ing.id}
+                      ingredient={ing}
+                      onChange={updateMealIngredient}
+                      onRemove={handleRemoveIngredient}
+                    />
                   ))}
                 </div>
               )}
@@ -670,7 +487,6 @@ export default function NouveauRepasPage() {
 
                   {/* Actions tools */}
                   <div className="flex flex-col gap-1.5 shrink-0 mt-1">
-                    {/* Move Up */}
                     <button
                       type="button"
                       onClick={() => handleMoveStep(idx, 'up')}
@@ -681,7 +497,6 @@ export default function NouveauRepasPage() {
                       <ArrowUp className="h-3.5 w-3.5" />
                     </button>
 
-                    {/* Move Down */}
                     <button
                       type="button"
                       onClick={() => handleMoveStep(idx, 'down')}
@@ -692,7 +507,6 @@ export default function NouveauRepasPage() {
                       <ArrowDown className="h-3.5 w-3.5" />
                     </button>
 
-                    {/* Delete */}
                     <button
                       type="button"
                       onClick={() => handleRemoveStep(s.id)}
@@ -772,89 +586,12 @@ export default function NouveauRepasPage() {
       </div>
 
       {/* Drawer for creating missing ingredient on the fly */}
-      <Drawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        title={
-          <div className="flex items-center gap-2 text-brand">
-            <Tag className="h-5 w-5" />
-            <span className="font-extrabold text-lg">Nouvel ingrédient</span>
-          </div>
-        }
-        maxWidth="sm:max-w-md"
-      >
-        <div className="space-y-5">
-          <p className="text-xs text-text-light-muted dark:text-text-dark-muted font-medium leading-relaxed">
-            Cet ingrédient n'existe pas encore. Enregistrez-le pour pouvoir l'utiliser dans vos recettes.
-          </p>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-text-light-main dark:text-text-dark-main">
-              Nom de l'ingrédient
-            </label>
-            <input
-              type="text"
-              value={newIngNom}
-              onChange={(e) => setNewIngNom(e.target.value)}
-              placeholder="Nom de l'ingrédient"
-              className="w-full px-4 py-2.5 text-sm border outline-none bg-neutral-50/50 dark:bg-neutral-800/10 border-neutral-200 dark:border-neutral-800 rounded-xl text-text-light-main dark:text-text-dark-main font-semibold"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-text-light-main dark:text-text-dark-main">
-              Rayon / Catégorie du magasin *
-            </label>
-            <div className="grid grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-1">
-              {Object.entries(CATEGORY_DETAILS).map(([key, details]) => {
-                const isSelected = newIngCategorie === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setNewIngCategorie(key as CategorieIngredient)}
-                    className={`flex items-center gap-2 px-3 py-2.5 text-xs font-semibold rounded-xl border text-left transition-all duration-300 cursor-pointer ${
-                      isSelected
-                        ? 'bg-brand text-white border-brand shadow-xs shadow-brand/10'
-                        : 'bg-bg-light dark:bg-bg-dark text-text-light-main dark:text-text-dark-main border-neutral-200/60 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800/40'
-                    }`}
-                  >
-                    <span className="line-clamp-1">{details.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 pt-3 border-t border-neutral-100 dark:border-neutral-800/20">
-            <button
-              type="button"
-              onClick={() => setIsDrawerOpen(false)}
-              className="flex-1 px-4 py-2.5 text-xs font-bold border border-neutral-200 dark:border-neutral-850 rounded-input hover:bg-neutral-50 dark:hover:bg-neutral-800 text-text-light-main dark:text-text-dark-main active:scale-95 transition-all cursor-pointer text-center"
-            >
-              Annuler
-            </button>
-            <button
-              type="button"
-              onClick={handleCreateIngredientSubmit}
-              disabled={creatingIngredient || !newIngNom.trim()}
-              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-extrabold bg-brand hover:bg-brand-hover text-white rounded-input active:scale-95 transition-all cursor-pointer shadow-sm shadow-brand/20 disabled:opacity-60 disabled:pointer-events-none"
-            >
-              {creatingIngredient ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Création...</span>
-                </>
-              ) : (
-                <>
-                  <Check className="h-3.5 w-3.5" />
-                  <span>Créer et ajouter</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </Drawer>
+      <CreateIngredientDrawer
+        isOpen={isCreateDrawerOpen}
+        onClose={() => setIsCreateDrawerOpen(false)}
+        initialName={newIngredientInitialName}
+        onCreated={handleIngredientCreated}
+      />
 
     </div>
   );

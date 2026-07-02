@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Utensils, ShoppingBasket, BookOpen, Pencil, Trash2, Loader2, AlertTriangle, CalendarX } from 'lucide-react';
+import { Utensils, ShoppingBasket, BookOpen, Pencil, Trash2, Loader2, CalendarX } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { RepasWithIngredients } from '@/types';
 import { formatIngredient } from '@/lib/shopping-list-utils';
 import Drawer from '@/components/Drawer';
+import ConfirmDeleteDrawer from '@/components/ConfirmDeleteDrawer';
 
 interface RepasDetailModalProps {
   repas: RepasWithIngredients | null;
@@ -238,69 +239,20 @@ export default function RepasDetailModal({
       </Drawer>
 
       {/* Delete Confirmation Drawer */}
-      <Drawer
+      <ConfirmDeleteDrawer
         isOpen={isDeleteConfirmOpen}
         onClose={() => {
           setIsDeleteConfirmOpen(false);
           setDeleteError(null);
         }}
-        maxWidth="sm:max-w-md"
-        title={
-          <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-            <AlertTriangle className="h-5 w-5" />
-            <span className="font-extrabold text-lg">Supprimer le repas</span>
-          </div>
-        }
-      >
-        <div className="space-y-5">
-          <p className="text-sm text-text-light-main dark:text-text-dark-main font-medium leading-relaxed">
-            Êtes-vous sûr de vouloir supprimer{' '}
-            <span className="font-extrabold">"{titre}"</span> ?
-            <br />
-            <span className="text-text-light-muted dark:text-text-dark-muted text-xs mt-1 block">
-              Cette action est irréversible. Le repas sera définitivement supprimé de votre carnet de recettes.
-            </span>
-          </p>
-
-          {deleteError && (
-            <div className="p-3 text-xs font-semibold bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 rounded-xl border border-red-200/50 dark:border-red-900/40">
-              {deleteError}
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 pt-2 border-t border-neutral-100 dark:border-neutral-800/20">
-            <button
-              type="button"
-              onClick={() => {
-                setIsDeleteConfirmOpen(false);
-                setDeleteError(null);
-              }}
-              disabled={isDeleting}
-              className="flex-1 px-4 py-2.5 text-sm font-bold border border-neutral-200 dark:border-neutral-850 rounded-input hover:bg-neutral-50 dark:hover:bg-neutral-800 text-text-light-main dark:text-text-dark-main active:scale-95 transition-all cursor-pointer text-center disabled:opacity-50"
-            >
-              Annuler
-            </button>
-            <button
-              type="button"
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-extrabold bg-red-600 hover:bg-red-700 text-white rounded-input active:scale-95 transition-all cursor-pointer shadow-sm disabled:opacity-60 disabled:pointer-events-none"
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Suppression...</span>
-                </>
-              ) : (
-                <>
-                  <Trash2 className="h-4 w-4" />
-                  <span>Supprimer définitivement</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </Drawer>
+        title="Supprimer le repas"
+        message="Êtes-vous sûr de vouloir supprimer"
+        highlightedName={titre}
+        warningText="Cette action est irréversible. Le repas sera définitivement supprimé de votre carnet de recettes."
+        onConfirm={handleDeleteConfirm}
+        isDeleting={isDeleting}
+        error={deleteError}
+      />
     </>
   );
 }

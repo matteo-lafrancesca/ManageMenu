@@ -34,3 +34,33 @@ Lorsque l'utilisateur te demande de coder une nouvelle fonctionnalité :
 1. Planifie brièvement l'architecture des composants et/ou de la base de données.
 2. Rédige le code de la logique métier (API, requêtes DB).
 3. Rédige le code UI en appliquant rigoureusement le Mobile-First et le `DESIGN_GUIDELINES.md`.
+
+## 🧩 5. ARCHITECTURE DES COMPOSANTS ET RÉUTILISABILITÉ
+
+### Principe général
+Avant de coder une interface, **analyse toujours si des éléments similaires existent déjà dans `src/components/`**. Si un bloc d'UI apparaît à plus d'un endroit (même partiellement), il doit devenir un composant partagé.
+
+### Règles de décomposition
+- **Une page = logique métier uniquement.** Les blocs d'UI autonomes (modales, drawers, formulaires, sélecteurs) doivent être extraits dans des composants séparés dans `src/components/`.
+- **Éviter la duplication à tout prix.** Si tu copies-colles du JSX entre deux fichiers, c'est un signal immédiat qu'un composant doit être créé.
+- **Granularité logique.** Décompose jusqu'au niveau où chaque composant a une seule responsabilité claire : ex. `IngredientRow` pour une ligne, `IngredientSearchInput` pour l'autocomplete, `ConfirmDeleteDrawer` pour la confirmation de suppression.
+
+### Composants partagés existants à réutiliser
+| Composant | Usage |
+|---|---|
+| `Drawer` | Tout panneau coulissant (bottom sheet mobile / modal centré desktop) |
+| `ConfirmDeleteDrawer` | Toute confirmation de suppression — **ne jamais créer de modale inline** |
+| `WeekSelector` | Navigation semaine avec flèches prev/next et bouton reset |
+| `IngredientSearchInput` | Champ autocomplete pour rechercher/ajouter un ingrédient |
+| `IngredientRow` | Ligne ingrédient éditable (nom + quantité/unité + supprimer) |
+| `CreateIngredientDrawer` | Drawer de création d'un nouvel ingrédient (nom + catégorie) |
+| `AddExtraDrawer` | Drawer d'ajout hors-planning (onglets Repas / Article) |
+| `RepasDetailModal` | Fiche détail d'un repas avec actions (modifier, supprimer, déprogrammer) |
+| `RepasCard` | Carte repas dans la grille |
+| `SortDrawer` | Drawer de tri pour la liste de repas |
+
+### Lors de l'ajout d'une nouvelle fonctionnalité
+1. **Vérifie** si un composant existant couvre déjà le besoin (avec une prop supplémentaire éventuelle).
+2. **Préfère étendre** un composant existant plutôt qu'en créer un nouveau similaire.
+3. **Si nouveau composant** : place-le dans `src/components/`, nomme-le de façon explicite, et documente ses props avec des commentaires TSDoc.
+4. **Les pages restent séparées** (`nouveau` vs `modifier`) mais **partagent leurs sous-composants**. Ne jamais fusionner deux pages dans un seul composant pour éviter les régressions.
