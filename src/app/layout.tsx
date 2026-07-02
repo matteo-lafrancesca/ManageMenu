@@ -11,7 +11,7 @@ const plusJakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "Menu Manage",
   description: "Gestion de repas et liste de courses",
-  manifest: "/manifest.json",
+  manifest: "/menumanage/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -24,6 +24,8 @@ export const metadata: Metadata = {
     ],
     apple: [
       { url: "/menumanage/180.png", sizes: "180x180", type: "image/png" },
+      { url: "/menumanage/152.png", sizes: "152x152", type: "image/png" },
+      { url: "/menumanage/120.png", sizes: "120x120", type: "image/png" },
     ],
   },
 };
