@@ -78,6 +78,27 @@ export default function RootLayout({
             `,
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              function updateDebug() {
+                var el = document.getElementById('debug-overlay');
+                if (!el) return;
+                var standalone = window.matchMedia('(display-mode: standalone)').matches;
+                var iosStandalone = window.navigator.standalone;
+                el.innerText =
+                  'standalone(css): ' + standalone +
+                  ' | iosStandalone: ' + iosStandalone +
+                  ' | innerHeight: ' + window.innerHeight +
+                  ' | visualVP: ' + (window.visualViewport ? window.visualViewport.height : 'n/a') +
+                  ' | appHeight: ' + getComputedStyle(document.documentElement).getPropertyValue('--app-height') +
+                  ' | build: ${Date.now()}';
+              }
+              setTimeout(updateDebug, 300);
+              window.addEventListener('resize', updateDebug);
+            `,
+          }}
+        />
       </head>
       <body className="bg-bg-light text-text-light-main dark:bg-bg-dark dark:text-text-dark-main font-sans transition-colors duration-300">
         <div className="orientation-warning">

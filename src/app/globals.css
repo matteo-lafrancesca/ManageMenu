@@ -38,6 +38,7 @@ body {
   margin: 0;
   padding: 0;
   height: var(--app-height);
+  overflow: hidden;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
   background-color: var(--color-bg-light);

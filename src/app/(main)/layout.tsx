@@ -98,6 +98,23 @@ export default function MainLayout({
       className="flex flex-col overflow-hidden bg-bg-light dark:bg-bg-dark text-text-light-main dark:text-text-dark-main transition-colors duration-300"
       style={{ height: 'var(--app-height, 100dvh)' }}
     >
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          zIndex: 9999,
+          background: 'black',
+          color: 'lime',
+          fontSize: '10px',
+          padding: '4px',
+          fontFamily: 'monospace',
+          pointerEvents: 'none',
+        }}
+        id="debug-overlay"
+      >
+        debug
+      </div>
       {/* 💻 NAVIGATION DESKTOP : Sidebar */}
       <aside className="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 bg-card-light dark:bg-card-dark border-r border-neutral-200/50 dark:border-neutral-800/40 p-6 z-40 transition-all duration-300">
         {/* En-tête / Logo */}
@@ -226,7 +243,7 @@ export default function MainLayout({
           - Défilement localisé
       ───────────────────────────────────────────────── */}
       <main className="flex-grow flex flex-col md:pl-64 overflow-y-auto overscroll-none bg-bg-light dark:bg-bg-dark text-text-light-main dark:text-text-dark-main transition-colors duration-300">
-        <div className="flex-1 p-4 md:p-8 max-w-5xl w-full mx-auto md:py-8">
+        <div className="flex-1 p-4 pb-24 md:p-8 max-w-5xl w-full mx-auto md:py-8">
           {children}
         </div>
       </main>
