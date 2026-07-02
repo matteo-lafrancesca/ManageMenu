@@ -10,6 +10,7 @@ interface DrawerProps {
   children: React.ReactNode;
   headerImage?: React.ReactNode;
   maxWidth?: string; // e.g., 'sm:max-w-3xl' or 'sm:max-w-md'
+  height?: string; // e.g., 'h-[80dvh]' or 'h-auto'
 }
 
 export default function Drawer({
@@ -18,7 +19,8 @@ export default function Drawer({
   title,
   children,
   headerImage,
-  maxWidth = 'sm:max-w-2xl'
+  maxWidth = 'sm:max-w-2xl',
+  height = 'h-[80dvh] sm:h-auto'
 }: DrawerProps) {
   // Local mounting and visibility states to support open & close animations
   const [mounted, setMounted] = useState(false);
@@ -124,7 +126,7 @@ export default function Drawer({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className={`fixed bottom-0 left-0 right-0 sm:top-1/2 sm:left-1/2 sm:bottom-auto sm:right-auto bg-card-light dark:bg-card-dark rounded-t-card sm:rounded-card shadow-2xl flex flex-col overflow-hidden border-t sm:border border-neutral-200/40 dark:border-neutral-800/40 z-10 w-full ${maxWidth} max-h-[92dvh] sm:max-h-[90vh] transition-all duration-300 ease-out select-none ${
+        className={`fixed bottom-0 left-0 right-0 sm:top-1/2 sm:left-1/2 sm:bottom-auto sm:right-auto bg-card-light dark:bg-card-dark rounded-t-card sm:rounded-card shadow-2xl flex flex-col overflow-hidden border-t sm:border border-neutral-200/40 dark:border-neutral-800/40 z-10 w-full ${maxWidth} ${height} max-h-[92dvh] sm:max-h-[90vh] transition-all duration-300 ease-out select-none ${
           visible 
             ? 'translate-y-0 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:scale-100 sm:opacity-100' 
             : 'translate-y-full sm:translate-y-4 sm:-translate-x-1/2 sm:-translate-y-[45%] sm:scale-95 sm:opacity-0'

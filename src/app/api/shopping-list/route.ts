@@ -80,7 +80,28 @@ export async function GET(request: Request) {
       },
     });
 
-    // 4. Agréger les ingrédients requis par le planning
+    // 3.b Récupérer les extras hors-planning de la semaine
+    const extras = await db.shoppingListExtra.findMany({
+      where: {
+        userId: sessionUser.id,
+        week,
+        year,
+      },
+      include: {
+        ingredient: true,
+        repas: {
+          include: {
+            ingredients: {
+              include: {
+                ingredient: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // 4. Agréger les ingrédients requis par le planning et les extras
     // Clé d'agrégation : `${ingredientId}_${normalizedUnite}`
     const plannedMap = new Map<string, {
       ingredientId: number;
@@ -114,6 +135,65 @@ export async function GET(request: Request) {
             unite: ri.unite,
             quantite: ri.quantite,
           });
+        }
+      }
+    }
+
+    // Agréger les extras hors-planning
+    for (const extra of extras) {
+      if (extra.ingredientId) {
+        const key = `${extra.ingredientId}_${normalizeUniteKey(extra.unite)}`;
+        const existing = plannedMap.get(key);
+
+        let newQuantite: number | null = null;
+        if (existing) {
+          if (existing.quantite !== null && extra.quantite !== null) {
+            newQuantite = existing.quantite + extra.quantite;
+          } else if (existing.quantite !== null) {
+            newQuantite = existing.quantite;
+          } else if (extra.quantite !== null) {
+            newQuantite = extra.quantite;
+          }
+          
+          plannedMap.set(key, {
+            ingredientId: extra.ingredientId,
+            unite: extra.unite,
+            quantite: newQuantite,
+          });
+        } else {
+          plannedMap.set(key, {
+            ingredientId: extra.ingredientId,
+            unite: extra.unite,
+            quantite: extra.quantite,
+          });
+        }
+      } else if (extra.repas) {
+        for (const ri of extra.repas.ingredients) {
+          const key = `${ri.ingredientId}_${normalizeUniteKey(ri.unite)}`;
+          const existing = plannedMap.get(key);
+
+          let newQuantite: number | null = null;
+          if (existing) {
+            if (existing.quantite !== null && ri.quantite !== null) {
+              newQuantite = existing.quantite + ri.quantite;
+            } else if (existing.quantite !== null) {
+              newQuantite = existing.quantite;
+            } else if (ri.quantite !== null) {
+              newQuantite = ri.quantite;
+            }
+            
+            plannedMap.set(key, {
+              ingredientId: ri.ingredientId,
+              unite: ri.unite,
+              quantite: newQuantite,
+            });
+          } else {
+            plannedMap.set(key, {
+              ingredientId: ri.ingredientId,
+              unite: ri.unite,
+              quantite: ri.quantite,
+            });
+          }
         }
       }
     }
@@ -276,6 +356,23 @@ export async function GET(request: Request) {
       week,
       year,
       categories: sortedCategories,
+      extras: extras.map((extra) => ({
+        id: extra.id,
+        ingredientId: extra.ingredientId,
+        quantite: extra.quantite,
+        unite: extra.unite,
+        repasId: extra.repasId,
+        ingredient: extra.ingredient ? {
+          id: extra.ingredient.id,
+          nom: extra.ingredient.nom,
+          categorie: extra.ingredient.categorie,
+        } : null,
+        repas: extra.repas ? {
+          id: extra.repas.id,
+          titre: extra.repas.titre,
+          photoUrl: extra.repas.photoUrl,
+        } : null,
+      })),
     });
   } catch (error) {
     console.error('Erreur lors de la récupération/synchronisation de la liste de courses:', error);

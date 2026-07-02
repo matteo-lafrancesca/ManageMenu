@@ -15,6 +15,7 @@ model User {
   repas        Repas[]
   programmation Programmation[]
   shoppingList  ShoppingListItem[]
+  shoppingListExtras ShoppingListExtra[]
 
   @@map("users")
 }
@@ -29,6 +30,7 @@ model Repas {
   createdAt     DateTime          @default(now()) @map("created_at")
   ingredients   RepasIngredient[]
   programmation Programmation[]
+  shoppingListExtras ShoppingListExtra[]
 
   @@map("repas")
 }
@@ -39,6 +41,7 @@ model Ingredient {
   categorie    String             // e.g., "fruits-legumes", "epicerie-salee"
   repas        RepasIngredient[]
   shoppingList ShoppingListItem[]
+  shoppingListExtras ShoppingListExtra[]
 
   @@map("ingredients")
 }
@@ -82,4 +85,21 @@ model ShoppingListItem {
 
   @@unique([userId, week, year, ingredientId, unite])
   @@map("shopping_list_items")
+}
+
+model ShoppingListExtra {
+  id           Int        @id @default(autoincrement())
+  userId       Int        @map("user_id")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredientId Int?       @map("ingredient_id")
+  ingredient   Ingredient? @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  quantite     Float?
+  unite        String?
+  repasId      Int?       @map("repas_id")
+  repas        Repas?     @relation(fields: [repasId], references: [id], onDelete: Cascade)
+  week         Int
+  year         Int
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@map("shopping_list_extras")
 }
