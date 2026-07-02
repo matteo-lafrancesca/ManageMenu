@@ -122,15 +122,19 @@ export default function MainLayout({
       <div
         style={{
           position: 'fixed',
-          top: '45px',
-          left: 0,
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
           zIndex: 9999,
-          background: 'black',
+          background: 'rgba(0, 0, 0, 0.95)',
           color: 'lime',
-          fontSize: '10px',
-          padding: '4px',
+          fontSize: '11px',
+          padding: '12px',
+          borderRadius: '8px',
           fontFamily: 'monospace',
           pointerEvents: 'none',
+          maxWidth: '90%',
+          wordBreak: 'break-all',
         }}
         id="debug-overlay"
       >
