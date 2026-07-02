@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Utensils, ShoppingBasket, BookOpen, Pencil, Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { Utensils, ShoppingBasket, BookOpen, Pencil, Trash2, Loader2, AlertTriangle, CalendarX } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { RepasWithIngredients } from '@/types';
 import { formatIngredient } from '@/lib/shopping-list-utils';
@@ -12,9 +12,18 @@ interface RepasDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDeleted?: (id: number) => void;
+  programmationId?: number;
+  onUnschedule?: (id: number) => Promise<void>;
 }
 
-export default function RepasDetailModal({ repas, isOpen, onClose, onDeleted }: RepasDetailModalProps) {
+export default function RepasDetailModal({ 
+  repas, 
+  isOpen, 
+  onClose, 
+  onDeleted,
+  programmationId,
+  onUnschedule
+}: RepasDetailModalProps) {
   const router = useRouter();
   const [activeRepas, setActiveRepas] = useState<RepasWithIngredients | null>(null);
 
@@ -22,6 +31,9 @@ export default function RepasDetailModal({ repas, isOpen, onClose, onDeleted }: 
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Unschedule state
+  const [isUnscheduling, setIsUnscheduling] = useState(false);
 
   useEffect(() => {
     if (repas) {
@@ -35,6 +47,7 @@ export default function RepasDetailModal({ repas, isOpen, onClose, onDeleted }: 
         setActiveRepas(null);
         setIsDeleteConfirmOpen(false);
         setDeleteError(null);
+        setIsUnscheduling(false);
       }, 300);
       return () => clearTimeout(timer);
     }
@@ -51,6 +64,26 @@ export default function RepasDetailModal({ repas, isOpen, onClose, onDeleted }: 
   const handleEdit = () => {
     onClose();
     router.push(`/repas/${id}/modifier`);
+  };
+
+  const handleUnschedule = async () => {
+    if (!programmationId) return;
+    try {
+      setIsUnscheduling(true);
+      const res = await fetch(`/api/planning/${programmationId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Erreur lors de la déprogrammation.');
+      }
+      onClose();
+      if (onUnschedule) {
+        await onUnschedule(programmationId);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Une erreur est survenue lors de la déprogrammation.');
+    } finally {
+      setIsUnscheduling(false);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -106,6 +139,22 @@ export default function RepasDetailModal({ repas, isOpen, onClose, onDeleted }: 
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 shrink-0 mt-0.5">
+              {programmationId && (
+                <button
+                  type="button"
+                  onClick={handleUnschedule}
+                  disabled={isUnscheduling}
+                  title="Enlever ce repas du planning"
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 hover:bg-amber-600 hover:text-white dark:hover:bg-amber-600 dark:hover:text-white rounded-input transition-all duration-200 active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  {isUnscheduling ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <CalendarX className="h-3.5 w-3.5" />
+                  )}
+                  <span>Déprogrammer</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleEdit}

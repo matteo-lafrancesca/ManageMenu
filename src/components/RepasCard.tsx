@@ -7,9 +7,10 @@ import { RepasWithIngredients } from '@/types';
 interface RepasCardProps {
   repas: RepasWithIngredients;
   onClick: () => void;
+  selectMode?: boolean;
 }
 
-export default function RepasCard({ repas, onClick }: RepasCardProps) {
+export default function RepasCard({ repas, onClick, selectMode = false }: RepasCardProps) {
   const { titre, photoUrl } = repas;
   const [imageError, setImageError] = useState(false);
 
@@ -52,9 +53,13 @@ export default function RepasCard({ repas, onClick }: RepasCardProps) {
             e.stopPropagation();
             onClick();
           }}
-          className="w-full py-2.5 text-xs font-semibold tracking-wide transition-all duration-300 bg-neutral-100 dark:bg-neutral-800 hover:bg-brand hover:text-white dark:hover:bg-brand dark:hover:text-white text-text-light-main dark:text-text-dark-main rounded-input active:scale-95 cursor-pointer shadow-sm hover:shadow"
+          className={`w-full py-2.5 text-xs font-bold tracking-wide transition-all duration-300 rounded-input active:scale-95 cursor-pointer shadow-sm hover:shadow ${
+            selectMode 
+              ? 'bg-brand text-white hover:bg-brand-hover' 
+              : 'bg-neutral-100 dark:bg-neutral-800 hover:bg-brand hover:text-white dark:hover:bg-brand dark:hover:text-white text-text-light-main dark:text-text-dark-main'
+          }`}
         >
-          Voir la recette
+          {selectMode ? 'Sélectionner' : 'Voir la recette'}
         </button>
       </div>
     </article>

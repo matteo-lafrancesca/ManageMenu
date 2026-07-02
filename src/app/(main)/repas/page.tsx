@@ -3,15 +3,26 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowUpDown, UtensilsCrossed, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { RepasWithIngredients } from '@/types';
 import RepasCard from '@/components/RepasCard';
 import RepasDetailModal from '@/components/RepasDetailModal';
 import SortDrawer from '@/components/SortDrawer';
 
 export default function RepasPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const selectMode = searchParams.get('selectMode') === 'true';
+  const dateParam = searchParams.get('date');
+  const heureParam = searchParams.get('heure');
+  const returnWeek = searchParams.get('returnWeek');
+  const returnYear = searchParams.get('returnYear');
+
   const [repasList, setRepasList] = useState<RepasWithIngredients[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
   
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,7 +83,37 @@ export default function RepasPage() {
       active = false;
       clearTimeout(delayDebounceFn);
     };
-  }, [searchQuery, sortBy]);
+  }, [searchQuery, sortBy]);  const handleSelectRepas = async (repasId: number) => {
+    if (!dateParam || !heureParam) return;
+    try {
+      setIsSelecting(true);
+      const res = await fetch('/api/planning', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repasId,
+          date: dateParam,
+          heure: parseInt(heureParam, 10),
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Erreur lors de la programmation.');
+      }
+
+      // Redirect back to planning page
+      let redirectUrl = '/planification';
+      if (returnWeek && returnYear) {
+        redirectUrl += `?week=${returnWeek}&year=${returnYear}`;
+      }
+      router.push(redirectUrl);
+    } catch (err: any) {
+      alert(err.message || 'Une erreur est survenue lors de la programmation du repas.');
+    } finally {
+      setIsSelecting(false);
+    }
+  };
 
   const getCurrentSortLabel = () => {
     switch (sortBy) {
@@ -88,6 +129,42 @@ export default function RepasPage() {
 
   return (
     <div className="space-y-6">
+      {/* Banner de sélection pour la planification */}
+      {selectMode && dateParam && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4.5 bg-brand-light dark:bg-brand/10 border border-brand/20 rounded-card animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-brand/10 dark:bg-brand/20 flex items-center justify-center text-brand shrink-0">
+              <UtensilsCrossed className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-extrabold text-text-light-main dark:text-text-dark-main">
+                Mode programmation actif
+              </span>
+              <span className="text-xs text-text-light-muted dark:text-text-dark-muted font-medium">
+                Choisissez un repas pour le{' '}
+                <span className="font-bold text-brand capitalize">
+                  {new Date(dateParam).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </span>{' '}
+                ({parseInt(heureParam || '0', 10) === 0 ? 'Midi' : 'Soir'})
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              let redirectUrl = '/planification';
+              if (returnWeek && returnYear) {
+                redirectUrl += `?week=${returnWeek}&year=${returnYear}`;
+              }
+              router.push(redirectUrl);
+            }}
+            disabled={isSelecting}
+            className="w-full sm:w-auto px-5 py-2 text-xs font-bold bg-neutral-105 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-text-light-main dark:text-text-dark-main rounded-input transition-all active:scale-95 cursor-pointer text-center"
+          >
+            Annuler la sélection
+          </button>
+        </div>
+      )}
+
       {/* Top Header Section */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-extrabold tracking-tight text-text-light-main dark:text-text-dark-main">
@@ -169,9 +246,14 @@ export default function RepasPage() {
             <RepasCard
               key={repas.id}
               repas={repas}
+              selectMode={selectMode}
               onClick={() => {
-                setSelectedRepas(repas);
-                setIsDetailOpen(true);
+                if (selectMode) {
+                  handleSelectRepas(repas.id);
+                } else {
+                  setSelectedRepas(repas);
+                  setIsDetailOpen(true);
+                }
               }}
             />
           ))}
