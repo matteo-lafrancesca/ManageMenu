@@ -4,12 +4,12 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { 
-  Calendar, 
-  ShoppingBag, 
-  LogOut, 
-  Sun, 
-  Moon, 
+import {
+  Calendar,
+  ShoppingBag,
+  LogOut,
+  Sun,
+  Moon,
   User,
   UtensilsCrossed
 } from 'lucide-react';
@@ -28,7 +28,7 @@ export default function MainLayout({
   const { user, logout, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-  
+
   // Theme state
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
@@ -94,8 +94,7 @@ export default function MainLayout({
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden flex flex-col bg-bg-light dark:bg-bg-dark text-text-light-main dark:text-text-dark-main transition-colors duration-300">
-      
+    <div className="flex flex-col min-h-dvh w-full overflow-hidden bg-bg-light dark:bg-bg-dark text-text-light-main dark:text-text-dark-main transition-colors duration-300">
       {/* 💻 NAVIGATION DESKTOP : Sidebar */}
       <aside className="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 bg-card-light dark:bg-card-dark border-r border-neutral-200/50 dark:border-neutral-800/40 p-6 z-40 transition-all duration-300">
         {/* En-tête / Logo */}
@@ -117,11 +116,10 @@ export default function MainLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-card text-sm font-semibold transition-all duration-300 cursor-pointer ${
-                  active
+                className={`flex items-center gap-3 px-4 py-3 rounded-card text-sm font-semibold transition-all duration-300 cursor-pointer ${active
                     ? 'bg-brand text-white shadow-sm shadow-brand/20 scale-[1.02]'
                     : 'text-text-light-muted dark:text-text-dark-muted hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-text-light-main dark:hover:text-text-dark-main hover:translate-x-1'
-                }`}
+                  }`}
               >
                 <Icon className={`h-5 w-5 shrink-0 ${active ? 'text-white' : 'text-text-light-muted dark:text-text-dark-muted'}`} />
                 <span>{item.label}</span>
@@ -249,21 +247,19 @@ export default function MainLayout({
               className="flex flex-col items-center justify-center w-20 pt-2 pb-1 text-center group cursor-pointer relative"
             >
               {/* Icône avec indicateur actif */}
-              <div className={`p-1.5 rounded-full transition-all duration-300 ${
-                active 
-                  ? 'text-brand scale-110 bg-brand-light dark:bg-brand/10' 
+              <div className={`p-1.5 rounded-full transition-all duration-300 ${active
+                  ? 'text-brand scale-110 bg-brand-light dark:bg-brand/10'
                   : 'text-text-light-muted dark:text-text-dark-muted group-active:scale-95'
-              }`}>
+                }`}>
                 <Icon className="h-5 w-5" />
               </div>
-              <span className={`text-[10px] font-semibold tracking-wide transition-all duration-300 ${
-                active 
-                  ? 'text-brand font-bold' 
+              <span className={`text-[10px] font-semibold tracking-wide transition-all duration-300 ${active
+                  ? 'text-brand font-bold'
                   : 'text-text-light-muted dark:text-text-dark-muted'
-              }`}>
+                }`}>
                 {item.label}
               </span>
-              
+
               {/* Barre active discrète */}
               {active && (
                 <span className="absolute top-0 w-6 h-0.5 rounded-full bg-brand" />
@@ -272,7 +268,7 @@ export default function MainLayout({
           );
         })}
       </nav>
-      
+
     </div>
   );
 }
