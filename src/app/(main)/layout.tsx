@@ -47,6 +47,16 @@ export default function MainLayout({
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
+
+    // Sync PWA Manifest and Apple Touch Icon link tags dynamically
+    const manifestLink = document.getElementById('manifest-link');
+    if (manifestLink) {
+      manifestLink.setAttribute('href', nextTheme === 'dark' ? '/comi/manifest-dark.json' : '/comi/manifest-light.json');
+    }
+    const appleIcon = document.getElementById('apple-touch-icon');
+    if (appleIcon) {
+      appleIcon.setAttribute('href', nextTheme === 'dark' ? '/comi/dark/ios/180.png' : '/comi/light/ios/180.png');
+    }
   };
 
   const navItems: NavItem[] = [
@@ -84,7 +94,7 @@ export default function MainLayout({
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-bg-light dark:bg-bg-dark">
         <div className="flex flex-col items-center gap-3">
-          <img src="/menumanage/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
+          <img src="/comi/clear/windows/StoreLogo.scale-200.png" alt="Logo Comi" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
           <span className="text-sm font-medium text-text-light-muted dark:text-text-dark-muted animate-pulse">
             Chargement de votre espace...
           </span>
@@ -102,11 +112,11 @@ export default function MainLayout({
       <aside className="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 bg-card-light dark:bg-card-dark border-r border-neutral-200/50 dark:border-neutral-800/40 p-6 z-40 transition-all duration-300">
         {/* En-tête / Logo */}
         <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="flex items-center justify-center h-10 w-10 overflow-hidden rounded-xl bg-brand-light dark:bg-brand/10 shadow-sm border border-neutral-200/50 dark:border-neutral-800/40">
-            <img src="/menumanage/100.png" alt="Logo" className="h-full w-full object-cover" />
+          <div className="flex items-center justify-center h-10 w-10 overflow-hidden">
+            <img src="/comi/clear/windows/StoreLogo.scale-200.png" alt="Logo" className="h-full w-full object-contain" />
           </div>
           <span className="text-xl font-bold tracking-tight text-text-light-main dark:text-text-dark-main">
-            ManageMenu
+            Comi
           </span>
         </div>
 
@@ -193,11 +203,11 @@ export default function MainLayout({
       ───────────────────────────────────────────────── */}
       <header className="flex md:hidden items-center justify-between px-5 h-14 bg-card-light dark:bg-card-dark border-b border-neutral-200/50 dark:border-neutral-800/40 transition-colors duration-300 shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center h-8 w-8 overflow-hidden rounded-lg bg-brand-light dark:bg-brand/10 border border-neutral-200/50 dark:border-neutral-800/40">
-            <img src="/menumanage/100.png" alt="Logo" className="h-full w-full object-cover" />
+          <div className="flex items-center justify-center h-8 w-8 overflow-hidden">
+            <img src="/comi/clear/windows/StoreLogo.scale-200.png" alt="Logo" className="h-full w-full object-contain" />
           </div>
           <span className="text-lg font-bold tracking-tight text-text-light-main dark:text-text-dark-main">
-            ManageMenu
+            Comi
           </span>
         </div>
 

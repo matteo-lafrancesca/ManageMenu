@@ -9,23 +9,17 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Menu Manage",
+  title: "Comi",
   description: "Gestion de repas et liste de courses",
-  manifest: "/menumanage/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Menu Manage",
+    title: "Comi",
   },
   icons: {
     icon: [
-      { url: "/menumanage/favicon-32.png", sizes: "32x32", type: "image/png" },
-      { url: "/menumanage/favicon-16.png", sizes: "16x16", type: "image/png" },
-    ],
-    apple: [
-      { url: "/menumanage/180.png", sizes: "180x180", type: "image/png" },
-      { url: "/menumanage/152.png", sizes: "152x152", type: "image/png" },
-      { url: "/menumanage/120.png", sizes: "120x120", type: "image/png" },
+      { url: "/comi/clear/windows/Square44x44Logo.targetsize-32.png?v=1", sizes: "32x32", type: "image/png" },
+      { url: "/comi/clear/windows/Square44x44Logo.targetsize-16.png?v=1", sizes: "16x16", type: "image/png" },
     ],
   },
 };
@@ -46,15 +40,26 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#E64A33" />
+        <link id="manifest-link" rel="manifest" href="/comi/manifest-light.json" />
+        <link id="apple-touch-icon" rel="apple-touch-icon" href="/comi/light/ios/180.png" />
 
         <script
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                var isDark = localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (isDark) {
                   document.documentElement.classList.add('dark');
                 } else {
                   document.documentElement.classList.remove('dark');
+                }
+                var manifestLink = document.getElementById('manifest-link');
+                if (manifestLink) {
+                  manifestLink.setAttribute('href', isDark ? '/comi/manifest-dark.json' : '/comi/manifest-light.json');
+                }
+                var appleIcon = document.getElementById('apple-touch-icon');
+                if (appleIcon) {
+                  appleIcon.setAttribute('href', isDark ? '/comi/dark/ios/180.png' : '/comi/light/ios/180.png');
                 }
               } catch (_) {}
             `,

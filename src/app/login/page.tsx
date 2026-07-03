@@ -51,7 +51,7 @@ function LoginContent() {
     return (
       <div className="flex h-dvh w-full items-center justify-center bg-bg-light dark:bg-bg-dark">
         <div className="flex flex-col items-center gap-3">
-          <img src="/menumanage/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
+          <img src="/comi/clear/windows/StoreLogo.scale-200.png" alt="Logo Comi" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
           <span className="text-sm font-medium text-text-light-muted dark:text-text-dark-muted">
             Chargement de la session...
           </span>
@@ -149,7 +149,7 @@ function LoginContent() {
             {/* Lien d'inscription */}
             <div className="mt-8 text-center text-sm">
               <span className="text-text-light-muted dark:text-text-dark-muted">
-                Nouveau sur ManageMenu ?{' '}
+                Nouveau sur Comi ?{' '}
               </span>
               <Link
                 href="/register"
@@ -170,7 +170,7 @@ export default function LoginPage() {
       fallback={
         <div className="flex h-dvh w-full items-center justify-center bg-bg-light dark:bg-bg-dark">
           <div className="flex flex-col items-center gap-3">
-            <img src="/menumanage/100.png" alt="Logo ManageMenu" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
+            <img src="/comi/clear/windows/StoreLogo.scale-200.png" alt="Logo Comi" className="h-12 w-12 animate-bounce rounded-xl shadow-sm" />
             <span className="text-sm font-medium text-text-light-muted dark:text-text-dark-muted">
               Chargement de la page...
             </span>

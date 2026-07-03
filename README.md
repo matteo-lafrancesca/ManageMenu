@@ -1,6 +1,6 @@
-# 🍳 Menu Manage
+# 🍳 Comi
 
-**Menu Manage** est une Progressive Web App (PWA) moderne conçue pour simplifier la planification des repas hebdomadaires et générer automatiquement la liste de courses associée.
+**Comi** est une Progressive Web App (PWA) moderne conçue pour simplifier la planification des repas hebdomadaires et générer automatiquement la liste de courses associée.
 
 L'application est conçue avec une approche **Mobile-First** (optimisée pour être installée sur l'écran d'accueil d'un iPhone) tout en restant pleinement fonctionnelle sur ordinateur, et propose un **Mode Sombre** harmonieux.
 
@@ -40,8 +40,8 @@ Assurez-vous d'avoir installé sur votre machine :
 ### 2. Cloner le projet
 
 ```bash
-git clone https://github.com/matteo-lafrancesca/ManageMenu.git
-cd ManageMenu
+git clone https://github.com/matteo-lafrancesca/Comi.git
+cd Comi
 ```
 
 ### 3. Installer les dépendances
@@ -121,7 +121,7 @@ Pour tester ou utiliser l'application comme une application native sur votre sma
 ## 📁 Structure du Projet
 
 ```text
-ManageMenu/
+Comi/
 ├── prisma/                  # Schéma de base de données SQLite & scripts de migration/seeding
 │   ├── schema.prisma        # Schéma Prisma
 │   └── seed.ts              # Script de seeding des ingrédients

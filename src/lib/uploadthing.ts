@@ -12,5 +12,5 @@ export const UploadDropzone = generateUploadDropzone<OurFileRouter>();
 
 // Génère les hooks React et helpers d'upload (ex: useUploadThing)
 export const { useUploadThing, uploadFiles } = generateReactHelpers<OurFileRouter>({
-  url: "/menumanage/api/uploadthing"
+  url: "/comi/api/uploadthing"
 });
