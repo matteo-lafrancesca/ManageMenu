@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Utensils } from 'lucide-react';
 import { RepasWithIngredients } from '@/types';
 
@@ -22,12 +23,13 @@ export default function RepasCard({ repas, onClick, selectMode = false }: RepasC
       {/* Conteneur d'image */}
       <div className="relative w-full overflow-hidden aspect-square rounded-card bg-brand-light/50 dark:bg-neutral-800/50 mb-3.5 flex items-center justify-center border border-neutral-100 dark:border-neutral-800/20">
         {photoUrl && !imageError ? (
-          <img 
+          <Image 
             src={photoUrl} 
             alt={titre} 
             onError={() => setImageError(true)}
+            width={300}
+            height={300}
             className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" 
-            loading="lazy"
           />
         ) : (
           <div className="flex flex-col items-center justify-center p-4 text-center">

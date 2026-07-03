@@ -164,6 +164,9 @@ export async function GET(request: Request) {
     const search = searchParams.get('search')?.trim();
     const sort = searchParams.get('sort') || 'date_creation';
     const order = searchParams.get('order') === 'asc' ? 'asc' : 'desc';
+    const limit = parseInt(searchParams.get('limit') || '12', 10);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const skip = (page - 1) * limit;
 
     // Construction des filtres
     const where: Prisma.RepasWhereInput = {
@@ -179,6 +182,7 @@ export async function GET(request: Request) {
       orderBy = { createdAt: order as Prisma.SortOrder };
     }
 
+    // Si pas de recherche ni de tri en mémoire, on pagine directement au niveau SQLite
     const meals = await db.repas.findMany({
       where,
       include: {
@@ -194,6 +198,7 @@ export async function GET(request: Request) {
         } : undefined,
       },
       orderBy,
+      ...((!search && sort !== 'rarete') ? { skip, take: limit + 1 } : {}),
     });
 
     type MealWithRelations = Prisma.RepasGetPayload<{
@@ -231,6 +236,20 @@ export async function GET(request: Request) {
       });
     }
 
+    // Gestion de l'indicateur hasMore
+    let hasMore = false;
+    if (search || sort === 'rarete') {
+      // Pagination en mémoire
+      const totalInSearch = filteredMeals.length;
+      filteredMeals = filteredMeals.slice(skip, skip + limit + 1);
+      hasMore = filteredMeals.length > limit;
+      filteredMeals = filteredMeals.slice(0, limit);
+    } else {
+      // Déjà paginé par SQL
+      hasMore = meals.length > limit;
+      filteredMeals = filteredMeals.slice(0, limit);
+    }
+
     // Aplatir et nettoyer la relation pour renvoyer le type exact attendu
     const responseMeals = filteredMeals.map((meal) => {
       return {
@@ -250,7 +269,7 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json(responseMeals, { status: 200 });
+    return NextResponse.json({ repas: responseMeals, hasMore }, { status: 200 });
   } catch (error) {
     console.error("Erreur lors de la récupération des repas:", error);
     return NextResponse.json(

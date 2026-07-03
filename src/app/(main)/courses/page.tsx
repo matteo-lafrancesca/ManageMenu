@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
   Carrot, 
@@ -73,6 +73,19 @@ export default function CoursesPage() {
   // Drawer states
   const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
   const [extraToDelete, setExtraToDelete] = useState<any | null>(null);
+
+  // Accumulateur des modifications en attente de synchronisation réseau
+  const pendingUpdatesRef = useRef<Record<number, { isChecked: boolean; originalChecked: boolean }>>({});
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Nettoyage du timeout de synchronisation lors du démontage du composant
+  useEffect(() => {
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Unified fetch shopping list data function
   const fetchShoppingList = async (showLoader = true) => {
@@ -178,42 +191,83 @@ export default function CoursesPage() {
     router.push(pathname);
   };
 
-  // Toggle item checked state with optimistic update
-  const handleToggleItem = async (itemId: number, currentCheckedState: boolean) => {
-    // 1. Optimistic Update
+  // Toggle item checked state with optimistic update and network batching (debounced at 2s)
+  const handleToggleItem = (itemId: number, currentCheckedState: boolean) => {
+    const nextCheckedState = !currentCheckedState;
+
+    // 1. Optimistic Update dans l'UI
     setCategories((prevCategories) =>
       prevCategories.map((cat) => ({
         ...cat,
         items: cat.items.map((item) =>
-          item.id === itemId ? { ...item, isChecked: !currentCheckedState } : item
+          item.id === itemId ? { ...item, isChecked: nextCheckedState } : item
         ),
       }))
     );
 
-    try {
-      const res = await fetch(`/api/shopping-list/${itemId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ isChecked: !currentCheckedState }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Erreur de synchronisation.');
+    // 2. Enregistrer la mise à jour dans l'accumulateur local
+    const pending = pendingUpdatesRef.current;
+    if (pending[itemId]) {
+      // Si on revient à l'état initial avant envoi réseau, on annule la mise à jour en attente
+      if (pending[itemId].originalChecked === nextCheckedState) {
+        delete pending[itemId];
+      } else {
+        pending[itemId].isChecked = nextCheckedState;
       }
-    } catch {
-      // Revert in case of API failure
-      setCategories((prevCategories) =>
-        prevCategories.map((cat) => ({
-          ...cat,
-          items: cat.items.map((item) =>
-            item.id === itemId ? { ...item, isChecked: currentCheckedState } : item
-          ),
-        }))
-      );
-      setActionError("Impossible de mettre à jour l'ingrédient. Veuillez vérifier votre connexion.");
+    } else {
+      pending[itemId] = {
+        isChecked: nextCheckedState,
+        originalChecked: currentCheckedState,
+      };
     }
+
+    // 3. Planifier/Repousser la synchronisation batch
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+
+    syncTimeoutRef.current = setTimeout(async () => {
+      const updatesToSend = { ...pendingUpdatesRef.current };
+      // Vider tout de suite l'accumulateur pour les clics futurs pendant la requête réseau
+      pendingUpdatesRef.current = {};
+
+      const items = Object.entries(updatesToSend).map(([id, val]) => ({
+        id: parseInt(id, 10),
+        isChecked: val.isChecked,
+      }));
+
+      if (items.length === 0) return;
+
+      try {
+        const res = await fetch('/api/shopping-list', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ items }),
+        });
+
+        if (!res.ok) {
+          throw new Error('Erreur de synchronisation batch.');
+        }
+      } catch (err) {
+        console.error('Erreur de synchronisation batch des courses:', err);
+        // Revert en arrière uniquement pour les éléments de ce batch ayant échoué
+        setCategories((prevCategories) =>
+          prevCategories.map((cat) => ({
+            ...cat,
+            items: cat.items.map((item) => {
+              const failedUpdate = updatesToSend[item.id];
+              if (failedUpdate !== undefined) {
+                return { ...item, isChecked: failedUpdate.originalChecked };
+              }
+              return item;
+            }),
+          }))
+        );
+        setActionError("Impossible de synchroniser vos modifications de courses. Veuillez vérifier votre connexion.");
+      }
+    }, 2000);
   };
 
   // Calculate shopping list completion metrics

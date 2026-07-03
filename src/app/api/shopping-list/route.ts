@@ -382,3 +382,63 @@ export async function GET(request: Request) {
     );
   }
 }
+
+/**
+ * PATCH /api/shopping-list
+ * Met à jour en bloc (batch) les états cochés de plusieurs articles.
+ * Payload : { items: Array<{ id: number, isChecked: boolean }> }
+ */
+export async function PATCH(request: Request) {
+  try {
+    const sessionUser = await getSessionUser();
+    if (!sessionUser) {
+      return NextResponse.json(
+        { error: 'Non autorisé. Veuillez vous connecter.' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { items } = body;
+
+    if (!items || !Array.isArray(items)) {
+      return NextResponse.json(
+        { error: "Le paramètre 'items' doit être un tableau." },
+        { status: 400 }
+      );
+    }
+
+    // Validation rapide des éléments
+    for (const item of items) {
+      if (typeof item.id !== 'number' || typeof item.isChecked !== 'boolean') {
+        return NextResponse.json(
+          { error: 'Chaque élément doit comporter un id (nombre) et un champ isChecked (booléen).' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Exécuter la transaction en bloc pour optimiser SQLite
+    await db.$transaction(async (tx) => {
+      for (const item of items) {
+        await tx.shoppingListItem.updateMany({
+          where: {
+            id: item.id,
+            userId: sessionUser.id,
+          },
+          data: {
+            isChecked: item.isChecked,
+          },
+        });
+      }
+    });
+
+    return NextResponse.json({ success: true, count: items.length }, { status: 200 });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour groupée de la liste de courses:', error);
+    return NextResponse.json(
+      { error: 'Une erreur interne est survenue lors de la mise à jour de la liste.' },
+      { status: 500 }
+    );
+  }
+}

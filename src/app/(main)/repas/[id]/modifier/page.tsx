@@ -18,6 +18,7 @@ import {
 import Link from 'next/link';
 import { CategorieIngredient, RepasWithIngredients } from '@/types';
 import { useUploadThing } from '@/lib/uploadthing';
+import { compressImage } from '@/lib/image-compression';
 import IngredientSearchInput, { IngredientSuggestion } from '@/components/IngredientSearchInput';
 import IngredientRow, { IngredientRowItem } from '@/components/IngredientRow';
 import CreateIngredientDrawer from '@/components/CreateIngredientDrawer';
@@ -240,12 +241,16 @@ export default function ModifierRepasPage() {
       let finalPhotoUrl = photoUrl;
       if (selectedImageFile) {
         try {
+          console.log("Début de la compression de l'image (modifier):", selectedImageFile.name, `${(selectedImageFile.size / 1024).toFixed(1)} Ko`);
+          const compressedFile = await compressImage(selectedImageFile);
+          console.log("Image compressée avec succès (modifier):", compressedFile.name, `${(compressedFile.size / 1024).toFixed(1)} Ko`);
+
           console.log("Début de l'envoi de l'image (modifier):", {
-            name: selectedImageFile.name,
-            size: selectedImageFile.size,
-            type: selectedImageFile.type
+            name: compressedFile.name,
+            size: compressedFile.size,
+            type: compressedFile.type
           });
-          const uploadRes = await startUpload([selectedImageFile]);
+          const uploadRes = await startUpload([compressedFile]);
           console.log("Résultat brut du téléversement (modifier):", uploadRes);
 
           if (uploadRes && uploadRes[0]) {
@@ -256,8 +261,8 @@ export default function ModifierRepasPage() {
             throw new Error("Le stockage n'a pas pu renvoyer d'adresse URL.");
           }
         } catch (err: any) {
-          console.error("Erreur attrapée pendant startUpload (modifier):", err);
-          throw new Error(`Échec du téléversement de l'image: ${err.message || err}`);
+          console.error("Erreur attrapée pendant la compression ou startUpload (modifier):", err);
+          throw new Error(`Échec du traitement/téléversement de l'image: ${err.message || err}`);
         }
       }
 

@@ -46,50 +46,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#E64A33" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Bloquer le zoom pincement (pinch-to-zoom)
-              document.addEventListener('touchstart', function (event) {
-                if (event.touches.length > 1) {
-                  event.preventDefault();
-                }
-              }, { passive: false });
 
-              // Bloquer le zoom double-tap
-              var lastTouchEnd = 0;
-              document.addEventListener('touchend', function (event) {
-                var now = (new Date()).getTime();
-                if (now - lastTouchEnd <= 300) {
-                  event.preventDefault();
-                }
-                lastTouchEnd = now;
-              }, false);
-
-              // Bloquer le geste de retour/suivant par glissement latéral (history swipe)
-              var touchStartX = 0;
-              var touchStartY = 0;
-
-              document.addEventListener('touchstart', function (e) {
-                touchStartX = e.touches[0].clientX;
-                touchStartY = e.touches[0].clientY;
-              }, { passive: true });
-
-              document.addEventListener('touchmove', function (e) {
-                var touchEndX = e.touches[0].clientX;
-                var touchEndY = e.touches[0].clientY;
-                var diffX = touchEndX - touchStartX;
-                var diffY = touchEndY - touchStartY;
-
-                // Si le geste commence près des bords gauche (< 20px) ou droit (> width - 20px) et est horizontal
-                if ((touchStartX < 20 && diffX > 0 && Math.abs(diffX) > Math.abs(diffY)) ||
-                    (touchStartX > window.innerWidth - 20 && diffX < 0 && Math.abs(diffX) > Math.abs(diffY))) {
-                  e.preventDefault();
-                }
-              }, { passive: false });
-            `,
-          }}
-        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -129,26 +86,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                  for (let registration of registrations) {
-                    registration.unregister();
-                  }
-                });
-              }
-              if ('caches' in window) {
-                caches.keys().then(function(names) {
-                  for (let name of names) {
-                    caches.delete(name);
-                  }
-                });
-              }
-            `,
-          }}
-        />
+
       </body>
     </html>
   );

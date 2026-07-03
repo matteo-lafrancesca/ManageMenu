@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Search, ArrowUpDown, UtensilsCrossed, Plus } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, ArrowUpDown, UtensilsCrossed, Plus, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { RepasWithIngredients } from '@/types';
@@ -21,6 +21,7 @@ export default function RepasPage() {
 
   const [repasList, setRepasList] = useState<RepasWithIngredients[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   
@@ -29,25 +30,40 @@ export default function RepasPage() {
   const [sortBy, setSortBy] = useState('date_creation');
   const [isSortOpen, setIsSortOpen] = useState(false);
   
+  // Pagination & Scroll Observer state
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const observerTargetRef = useRef<HTMLDivElement | null>(null);
+  
   // Detail Modal state
   const [selectedRepas, setSelectedRepas] = useState<RepasWithIngredients | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  // Fetch meals on change of search query (debounced) or sort mode
+  // Reset pagination when search query or sort mode changes
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    setRepasList([]);
+  }, [searchQuery, sortBy]);
+
+  // Fetch meals on change of page, search query (debounced) or sort mode
   useEffect(() => {
     let active = true;
     
     const fetchRepas = async () => {
       try {
-        setLoading(true);
+        if (page === 1) {
+          setLoading(true);
+        } else {
+          setLoadingMore(true);
+        }
         setError(null);
         
-        let url = `/api/repas?sort=${sortBy}`;
+        let url = `/api/repas?sort=${sortBy}&limit=12&page=${page}`;
         if (searchQuery.trim()) {
           url += `&search=${encodeURIComponent(searchQuery)}`;
         }
         
-        // Sorting direction configuration: alphabetical goes asc, others desc
         if (sortBy === 'alphabetique') {
           url += `&order=asc`;
         } else {
@@ -61,7 +77,12 @@ export default function RepasPage() {
         const data = await res.json();
         
         if (active) {
-          setRepasList(data);
+          if (page === 1) {
+            setRepasList(data.repas || []);
+          } else {
+            setRepasList((prev) => [...prev, ...(data.repas || [])]);
+          }
+          setHasMore(data.hasMore);
         }
       } catch (err: any) {
         if (active) {
@@ -70,20 +91,49 @@ export default function RepasPage() {
       } finally {
         if (active) {
           setLoading(false);
+          setLoadingMore(false);
         }
       }
     };
 
-    // Debounce search input to avoid hitting database on every keystroke
-    const delayDebounceFn = setTimeout(() => {
+    // Debounce search inputs only on page 1 (initial load of a new search)
+    let delayDebounceFn: NodeJS.Timeout;
+    if (page === 1) {
+      delayDebounceFn = setTimeout(() => {
+        fetchRepas();
+      }, 300);
+    } else {
       fetchRepas();
-    }, 300);
+    }
 
     return () => {
       active = false;
-      clearTimeout(delayDebounceFn);
+      if (delayDebounceFn) clearTimeout(delayDebounceFn);
     };
-  }, [searchQuery, sortBy]);  const handleSelectRepas = async (repasId: number) => {
+  }, [page, searchQuery, sortBy]);
+
+  // Set up IntersectionObserver for Infinite Scroll
+  useEffect(() => {
+    const observerTarget = observerTargetRef.current;
+    if (!observerTarget || !hasMore || loading || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setPage((prev) => prev + 1);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(observerTarget);
+
+    return () => {
+      if (observerTarget) {
+        observer.unobserve(observerTarget);
+      }
+    };
+  }, [hasMore, loading, loadingMore]);  const handleSelectRepas = async (repasId: number) => {
     if (!dateParam || !heureParam) return;
     try {
       setIsSelecting(true);
@@ -241,22 +291,34 @@ export default function RepasPage() {
         </div>
       ) : (
         /* Meals Grid List */
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 animate-fade-in">
-          {repasList.map((repas) => (
-            <RepasCard
-              key={repas.id}
-              repas={repas}
-              selectMode={selectMode}
-              onClick={() => {
-                if (selectMode) {
-                  handleSelectRepas(repas.id);
-                } else {
-                  setSelectedRepas(repas);
-                  setIsDetailOpen(true);
-                }
-              }}
-            />
-          ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 animate-fade-in">
+            {repasList.map((repas) => (
+              <RepasCard
+                key={repas.id}
+                repas={repas}
+                selectMode={selectMode}
+                onClick={() => {
+                  if (selectMode) {
+                    handleSelectRepas(repas.id);
+                  } else {
+                    setSelectedRepas(repas);
+                    setIsDetailOpen(true);
+                  }
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Element sentinelle observé pour déclencher le chargement de la page suivante */}
+          {hasMore && (
+            <div 
+              ref={observerTargetRef} 
+              className="flex justify-center items-center py-6 w-full"
+            >
+              <Loader2 className="h-6 w-6 text-brand animate-spin" />
+            </div>
+          )}
         </div>
       )}
 

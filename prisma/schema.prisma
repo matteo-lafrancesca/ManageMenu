@@ -33,6 +33,7 @@ model Repas {
   shoppingListExtras ShoppingListExtra[]
 
   @@map("repas")
+  @@index([userId])
 }
 
 model Ingredient {
@@ -56,6 +57,8 @@ model RepasIngredient {
   unite        String?
 
   @@map("repas_ingredients")
+  @@index([repasId])
+  @@index([ingredientId])
 }
 
 model Programmation {
@@ -68,6 +71,8 @@ model Programmation {
   heure   Int      // 0 = midi, 1 = soir
 
   @@map("programmation")
+  @@index([userId])
+  @@index([repasId])
 }
 
 model ShoppingListItem {
@@ -102,4 +107,7 @@ model ShoppingListExtra {
   createdAt    DateTime   @default(now()) @map("created_at")
 
   @@map("shopping_list_extras")
+  @@index([userId])
+  @@index([repasId])
+  @@index([ingredientId])
 }

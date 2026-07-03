@@ -18,6 +18,7 @@ import {
 import Link from 'next/link';
 import { CategorieIngredient } from '@/types';
 import { useUploadThing } from '@/lib/uploadthing';
+import { compressImage } from '@/lib/image-compression';
 import IngredientSearchInput, { IngredientSuggestion } from '@/components/IngredientSearchInput';
 import IngredientRow, { IngredientRowItem } from '@/components/IngredientRow';
 import CreateIngredientDrawer from '@/components/CreateIngredientDrawer';
@@ -207,12 +208,16 @@ export default function NouveauRepasPage() {
       let finalPhotoUrl = photoUrl;
       if (selectedImageFile) {
         try {
+          console.log("Début de la compression de l'image:", selectedImageFile.name, `${(selectedImageFile.size / 1024).toFixed(1)} Ko`);
+          const compressedFile = await compressImage(selectedImageFile);
+          console.log("Image compressée avec succès:", compressedFile.name, `${(compressedFile.size / 1024).toFixed(1)} Ko`);
+
           console.log("Début de l'envoi de l'image:", {
-            name: selectedImageFile.name,
-            size: selectedImageFile.size,
-            type: selectedImageFile.type
+            name: compressedFile.name,
+            size: compressedFile.size,
+            type: compressedFile.type
           });
-          const uploadRes = await startUpload([selectedImageFile]);
+          const uploadRes = await startUpload([compressedFile]);
           console.log("Résultat brut du téléversement:", uploadRes);
           
           if (uploadRes && uploadRes[0]) {
@@ -223,8 +228,8 @@ export default function NouveauRepasPage() {
             throw new Error("Le stockage n'a pas pu renvoyer d'adresse URL.");
           }
         } catch (err: any) {
-          console.error("Erreur attrapée pendant startUpload:", err);
-          throw new Error(`Échec du téléversement de l'image: ${err.message || err}`);
+          console.error("Erreur attrapée pendant la compression ou startUpload:", err);
+          throw new Error(`Échec du traitement/téléversement de l'image: ${err.message || err}`);
         }
       }
 
