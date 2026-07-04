@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  /* L'orange/rouge signature de Jow */
-  --color-brand: #E64A33;
-  --color-brand-hover: #C83B25;
-  --color-brand-light: #FDF2F0;
+  /* Jaune doré signature du logo */
+  --color-brand: #FEB92D;
+  --color-brand-hover: #E5A420;
+  --color-brand-light: #FFF8E7;
 
   /* Thème Clair : Fonds chauds / textes sombres mais doux */
   --color-bg-light: #FAF6F0;
@@ -123,4 +123,4 @@ body {
     font-size: 16px !important;
   }
 }
-
+
