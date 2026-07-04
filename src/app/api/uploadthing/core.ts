@@ -8,7 +8,7 @@ export const ourFileRouter = {
   // Route pour uploader les photos de repas
   imageUploader: f({
     image: {
-      maxFileSize: "4MB",
+      maxFileSize: "2MB",
       maxFileCount: 1,
     },
   })
