@@ -27,6 +27,7 @@ export default function RepasPage() {
   
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date_creation');
   const [isSortOpen, setIsSortOpen] = useState(false);
   
@@ -39,29 +40,70 @@ export default function RepasPage() {
   const [selectedRepas, setSelectedRepas] = useState<RepasWithIngredients | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  // Reset pagination when search query or sort mode changes
-  useEffect(() => {
+  const [isRefetching, setIsRefetching] = useState(false);
+
+  // Synchronisation synchrone de la pagination lors du changement de recherche ou de tri (Derived State)
+  const prevSearchQueryRef = useRef(debouncedSearchQuery);
+  const prevSortByRef = useRef(sortBy);
+
+  if (debouncedSearchQuery !== prevSearchQueryRef.current || sortBy !== prevSortByRef.current) {
+    prevSearchQueryRef.current = debouncedSearchQuery;
+    prevSortByRef.current = sortBy;
     setPage(1);
     setHasMore(true);
-    setRepasList([]);
-  }, [searchQuery, sortBy]);
+    if (repasList.length === 0) {
+      setLoading(true);
+    } else {
+      setIsRefetching(true);
+    }
+    // Scroll to top to avoid auto-triggering the scroll observer during update
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
 
-  // Fetch meals on change of page, search query (debounced) or sort mode
+  // Load saved sorting option from localStorage
+  useEffect(() => {
+    const savedSort = localStorage.getItem('repas_sort_by');
+    if (savedSort) {
+      setSortBy(savedSort);
+    }
+  }, []);
+
+  // Save sorting option to localStorage on change
+  const handleSortChange = (newSort: string) => {
+    setSortBy(newSort);
+    localStorage.setItem('repas_sort_by', newSort);
+  };
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch meals on change of page, debounced search query or sort mode
   useEffect(() => {
     let active = true;
     
     const fetchRepas = async () => {
       try {
         if (page === 1) {
-          setLoading(true);
+          if (repasList.length === 0) {
+            setLoading(true);
+          } else {
+            setIsRefetching(true);
+          }
         } else {
           setLoadingMore(true);
         }
         setError(null);
         
         let url = `/api/repas?sort=${sortBy}&limit=12&page=${page}`;
-        if (searchQuery.trim()) {
-          url += `&search=${encodeURIComponent(searchQuery)}`;
+        if (debouncedSearchQuery.trim()) {
+          url += `&search=${encodeURIComponent(debouncedSearchQuery)}`;
         }
         
         if (sortBy === 'alphabetique') {
@@ -92,30 +134,22 @@ export default function RepasPage() {
         if (active) {
           setLoading(false);
           setLoadingMore(false);
+          setIsRefetching(false);
         }
       }
     };
 
-    // Debounce search inputs only on page 1 (initial load of a new search)
-    let delayDebounceFn: NodeJS.Timeout;
-    if (page === 1) {
-      delayDebounceFn = setTimeout(() => {
-        fetchRepas();
-      }, 300);
-    } else {
-      fetchRepas();
-    }
+    fetchRepas();
 
     return () => {
       active = false;
-      if (delayDebounceFn) clearTimeout(delayDebounceFn);
     };
-  }, [page, searchQuery, sortBy]);
+  }, [page, debouncedSearchQuery, sortBy]);
 
   // Set up IntersectionObserver for Infinite Scroll
   useEffect(() => {
     const observerTarget = observerTargetRef.current;
-    if (!observerTarget || !hasMore || loading || loadingMore) return;
+    if (!observerTarget || !hasMore || loading || loadingMore || isRefetching) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -133,7 +167,7 @@ export default function RepasPage() {
         observer.unobserve(observerTarget);
       }
     };
-  }, [hasMore, loading, loadingMore]);  const handleSelectRepas = async (repasId: number) => {
+  }, [hasMore, loading, loadingMore, isRefetching]);  const handleSelectRepas = async (repasId: number) => {
     if (!dateParam || !heureParam) return;
     try {
       setIsSelecting(true);
@@ -292,7 +326,7 @@ export default function RepasPage() {
       ) : (
         /* Meals Grid List */
         <div className="space-y-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 animate-fade-in">
+          <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 animate-fade-in transition-opacity duration-200 ${isRefetching ? 'opacity-50' : ''}`}>
             {repasList.map((repas) => (
               <RepasCard
                 key={repas.id}
@@ -311,7 +345,7 @@ export default function RepasPage() {
           </div>
 
           {/* Element sentinelle observé pour déclencher le chargement de la page suivante */}
-          {hasMore && (
+          {hasMore && !isRefetching && (
             <div 
               ref={observerTargetRef} 
               className="flex justify-center items-center py-6 w-full"
@@ -342,7 +376,7 @@ export default function RepasPage() {
         isOpen={isSortOpen}
         onClose={() => setIsSortOpen(false)}
         currentSort={sortBy}
-        onSortChange={setSortBy}
+        onSortChange={handleSortChange}
       />
     </div>
   );
