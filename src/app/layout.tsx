@@ -54,14 +54,6 @@ export default function RootLayout({
                 } else {
                   document.documentElement.classList.remove('dark');
                 }
-                var manifestLink = document.getElementById('manifest-link');
-                if (manifestLink) {
-                  manifestLink.setAttribute('href', isDark ? '/comi/manifest-dark.json' : '/comi/manifest-light.json');
-                }
-                var appleIcon = document.getElementById('apple-touch-icon');
-                if (appleIcon) {
-                  appleIcon.setAttribute('href', isDark ? '/comi/dark/ios/180.png' : '/comi/light/ios/180.png');
-                }
               } catch (_) {}
             `,
           }}

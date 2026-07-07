@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
@@ -84,22 +84,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     } else {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
-    }
-
-    // Sync PWA Manifest et Apple Touch Icon
-    const manifestLink = document.getElementById('manifest-link');
-    if (manifestLink) {
-      manifestLink.setAttribute(
-        'href',
-        nextTheme === 'dark' ? '/comi/manifest-dark.json' : '/comi/manifest-light.json'
-      );
-    }
-    const appleIcon = document.getElementById('apple-touch-icon');
-    if (appleIcon) {
-      appleIcon.setAttribute(
-        'href',
-        nextTheme === 'dark' ? '/comi/dark/ios/180.png' : '/comi/light/ios/180.png'
-      );
     }
   }, [theme]);
 
