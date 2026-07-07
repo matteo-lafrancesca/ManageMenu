@@ -121,3 +121,66 @@ export function getDaysOfWeek(week: number, year: number): Date[] {
   
   return days;
 }
+
+/**
+ * Retourne les labels de jours ordonnés à partir de weekStartDay.
+ * weekStartDay: 0=Lundi, 1=Mardi, ..., 6=Dimanche
+ * Exemple : weekStartDay=2 (Mercredi) → ['Mercredi','Jeudi','Vendredi','Samedi','Dimanche','Lundi','Mardi']
+ */
+export function getOrderedDayLabels(weekStartDay: number): string[] {
+  const labels: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    labels.push(FRENCH_DAYS[(weekStartDay + i) % 7]);
+  }
+  return labels;
+}
+
+/**
+ * Retourne {start, end} UTC de la "semaine personnalisée" de 7 jours
+ * contenant `referenceDate`, avec `weekStartDay` comme premier jour.
+ * weekStartDay: 0=Lundi, 1=Mardi, ..., 6=Dimanche
+ */
+export function getCustomWeekRange(
+  referenceDate: Date,
+  weekStartDay: number
+): { start: Date; end: Date } {
+  // JS getDay() : 0=Dim, 1=Lun, ..., 6=Sam
+  // On convertit weekStartDay (0=Lun) vers JS convention (0=Dim)
+  const jsWeekStartDay = weekStartDay === 6 ? 0 : weekStartDay + 1;
+
+  // Jour JS de referenceDate
+  const refDay = referenceDate.getDay(); // 0=Dim, 1=Lun, ...
+
+  // Nombre de jours à reculer pour atteindre le début de la semaine personnalisée
+  let diff = (refDay - jsWeekStartDay + 7) % 7;
+
+  const start = new Date(referenceDate);
+  start.setDate(referenceDate.getDate() - diff);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return {
+    start: new Date(Date.UTC(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0)),
+    end: new Date(Date.UTC(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999)),
+  };
+}
+
+/**
+ * Retourne les 7 Date[] normalisées UTC de la "semaine personnalisée"
+ * contenant `referenceDate`, ordonnées de weekStartDay à weekStartDay+6.
+ */
+export function getCustomWeekDays(
+  referenceDate: Date,
+  weekStartDay: number
+): Date[] {
+  const { start } = getCustomWeekRange(referenceDate, weekStartDay);
+
+  const days: Date[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start);
+    d.setUTCDate(start.getUTCDate() + i);
+    days.push(d);
+  }
+  return days;
+}

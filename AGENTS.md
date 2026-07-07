@@ -64,3 +64,17 @@ Avant de coder une interface, **analyse toujours si des éléments similaires ex
 2. **Préfère étendre** un composant existant plutôt qu'en créer un nouveau similaire.
 3. **Si nouveau composant** : place-le dans `src/components/`, nomme-le de façon explicite, et documente ses props avec des commentaires TSDoc.
 4. **Les pages restent séparées** (`nouveau` vs `modifier`) mais **partagent leurs sous-composants**. Ne jamais fusionner deux pages dans un seul composant pour éviter les régressions.
+
+## 6. Stratégies d'Optimisation des Tokens
+
+Pour garantir une efficacité maximale et limiter la consommation de jetons, tous les agents doivent respecter ces directives :
+
+### 1. Rigueur Communicationnelle
+Zéro blabla : Éliminez les salutations, les préfaces de politesse et les conclusions répétitives.
+
+Concision maximale : Si une explication est nécessaire, elle doit être brève et technique.
+
+### 2. Gestion du Contexte
+Ne pas réitérer : Ne reformulez pas les instructions déjà présentes dans ce fichier.
+
+Référence stricte : Si vous analysez une erreur, basez-vous uniquement sur les logs fournis ou les fichiers explicitement mentionnés. Ne supposez pas de contexte externe non fourni.

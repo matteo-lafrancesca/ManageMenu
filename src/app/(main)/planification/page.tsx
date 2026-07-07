@@ -9,14 +9,17 @@ import {
   Loader2
 } from 'lucide-react';
 import { ProgrammationWithRepas, RepasWithIngredients } from '@/types';
-import { getDaysOfWeek, FRENCH_DAYS, getISOWeekAndYear } from '@/lib/date-utils';
+import { getCustomWeekDays, getOrderedDayLabels, getISOWeekAndYear } from '@/lib/date-utils';
 import RepasDetailModal from '@/components/RepasDetailModal';
 import WeekSelector from '@/components/WeekSelector';
+import { useSettings } from '@/contexts/SettingsContext';
+
 
 export default function PlanificationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const { weekStartDay } = useSettings();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -129,8 +132,12 @@ export default function PlanificationPage() {
     return `Du ${startFormatted} au ${endFormatted}`;
   };
 
-  // Get the 7 days of the current week (from Monday to Sunday)
-  const days = currentWeek && currentYear ? getDaysOfWeek(currentWeek, currentYear) : [];
+  // Get the 7 days of the current week according to weekStartDay
+  const days =
+    currentWeek && currentYear && weekInfo
+      ? getCustomWeekDays(new Date(weekInfo.start), weekStartDay)
+      : [];
+  const dayLabels = getOrderedDayLabels(weekStartDay);
 
   // Find a programmation for a given date and mealtime (0 = midi, 1 = soir)
   const findProgrammation = (date: Date, heure: number) => {
@@ -263,7 +270,7 @@ export default function PlanificationPage() {
                 {/* Day Header */}
                 <div className="text-center py-2.5 bg-neutral-100/50 dark:bg-neutral-800/40 border border-neutral-200/10 dark:border-neutral-800/10 rounded-xl shrink-0">
                   <span className="block text-xs font-extrabold capitalize text-text-light-main dark:text-text-dark-main">
-                    {FRENCH_DAYS[idx]}
+                    {dayLabels[idx]}
                   </span>
                   <span className="block text-[10px] font-bold text-text-light-muted dark:text-text-dark-muted mt-0.5">
                     {formatDateLabel(day)}
@@ -289,7 +296,7 @@ export default function PlanificationPage() {
                 {/* Day Header */}
                 <div className="flex items-baseline gap-2 pb-2 border-b border-neutral-100 dark:border-neutral-800/40">
                   <h3 className="font-extrabold text-base capitalize text-text-light-main dark:text-text-dark-main">
-                    {FRENCH_DAYS[idx]}
+                    {dayLabels[idx]}
                   </h3>
                   <span className="text-xs font-bold text-text-light-muted dark:text-text-dark-muted">
                     {formatDateLabel(day)}

@@ -5,7 +5,9 @@ import {
   getParisDate,
   getISOWeekAndYear,
   getDatesForISOWeek,
+  getCustomWeekRange,
 } from '@/lib/date-utils';
+
 import { CATEGORY_DETAILS, CategorieIngredient } from '@/types';
 import { formatIngredient } from '@/lib/shopping-list-utils';
 
@@ -37,6 +39,10 @@ export async function GET(request: Request) {
 
     let week: number;
     let year: number;
+    let start: Date;
+    let end: Date;
+
+    const weekStartDay: number = sessionUser.weekStartDay ?? 0;
 
     if (weekParam && yearParam) {
       week = parseInt(weekParam, 10);
@@ -48,15 +54,22 @@ export async function GET(request: Request) {
           { status: 400 }
         );
       }
+
+      const isoRange = getDatesForISOWeek(week, year);
+      const isoMonday = new Date(isoRange.start);
+      const customRange = getCustomWeekRange(getParisDate(isoMonday), weekStartDay);
+      start = customRange.start;
+      end = customRange.end;
     } else {
       // Semaine actuelle selon l'heure de Paris
       const nowParis = getParisDate();
       const isoInfo = getISOWeekAndYear(nowParis);
       week = isoInfo.week;
       year = isoInfo.year;
+      const customRange = getCustomWeekRange(nowParis, weekStartDay);
+      start = customRange.start;
+      end = customRange.end;
     }
-
-    const { start, end } = getDatesForISOWeek(week, year);
 
     // 3. Récupérer les programmations de repas de la semaine
     const programmations = await db.programmation.findMany({

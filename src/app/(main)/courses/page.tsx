@@ -20,11 +20,14 @@ import {
   Utensils,
 } from 'lucide-react';
 import { CategorieIngredient, CATEGORY_DETAILS, normalizeCategory } from '@/types';
-import { getDatesForISOWeek, getISOWeekAndYear } from '@/lib/date-utils';
+import { getDatesForISOWeek, getISOWeekAndYear, getCustomWeekRange } from '@/lib/date-utils';
+
 import { formatIngredient } from '@/lib/shopping-list-utils';
 import ConfirmDeleteDrawer from '@/components/ConfirmDeleteDrawer';
 import AddExtraDrawer from '@/components/AddExtraDrawer';
 import WeekSelector from '@/components/WeekSelector';
+import { useSettings } from '@/contexts/SettingsContext';
+
 
 interface ShoppingItem {
   id: number;
@@ -59,6 +62,7 @@ export default function CoursesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const { weekStartDay } = useSettings();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -153,9 +157,12 @@ export default function CoursesPage() {
   // Calculate week start and end date labels client-side
   const weekInfo = useMemo(() => {
     if (currentWeek === null || currentYear === null) return null;
-    const { start, end } = getDatesForISOWeek(currentWeek, currentYear);
+    // Utilise la plage personnalisée cohérente avec l'API
+    const isoRange = getDatesForISOWeek(currentWeek, currentYear);
+    const { start, end } = getCustomWeekRange(new Date(isoRange.start), weekStartDay);
     return { start, end };
-  }, [currentWeek, currentYear]);
+  }, [currentWeek, currentYear, weekStartDay]);
+
 
   const formatDateRange = (start: Date, end: Date) => {
     const options: Intl.DateTimeFormatOptions = { 

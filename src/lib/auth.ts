@@ -62,6 +62,7 @@ export async function getSessionUser() {
         id: true,
         email: true,
         createdAt: true,
+        weekStartDay: true,
       },
     });
     
