@@ -89,7 +89,7 @@ export default function ParametresPage() {
 
 
           {/* Sélecteur 7 jours */}
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x">
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x hide-scrollbar">
             {FRENCH_DAYS.map((label, idx) => {
               const isSelected = idx === weekStartDay;
               const short = label.slice(0, 3);

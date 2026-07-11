@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
+import GestureBlocker from "@/components/GestureBlocker";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
@@ -61,6 +62,7 @@ export default function RootLayout({
 
       </head>
       <body className="bg-bg-light text-text-light-main dark:bg-bg-dark dark:text-text-dark-main font-sans transition-colors duration-300">
+        <GestureBlocker />
         <div className="orientation-warning">
           <svg
             xmlns="http://www.w3.org/2000/svg"

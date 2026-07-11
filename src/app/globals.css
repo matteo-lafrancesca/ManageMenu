@@ -72,6 +72,14 @@ body {
   height: 100dvh;
 }
 
+/* Masquer les barres de défilement */
+@utility hide-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* ─── Blocage d'orientation Paysage sur Mobile ─── */
 @keyframes rotate-phone {
 
