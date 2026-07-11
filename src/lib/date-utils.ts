@@ -202,3 +202,50 @@ export function getAdjacentWeek(
   return getISOWeekAndYear(targetDate);
 }
 
+/**
+ * Calcule les détails de la semaine personnalisée contenant une date donnée,
+ * avec une identification unique et stable sous forme de (week, year).
+ * weekStartDay: 0=Lundi, 1=Mardi, ..., 6=Dimanche
+ */
+export function getCustomWeekDetails(
+  referenceDate: Date,
+  weekStartDay: number
+): { week: number; year: number; start: Date; end: Date } {
+  const { start, end } = getCustomWeekRange(referenceDate, weekStartDay);
+
+  // Trouver le lundi dans cet intervalle de 7 jours (représenté en UTC/minuit)
+  let customMonday = new Date(start);
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start.getTime() + i * 86400000);
+    if (d.getUTCDay() === 1) { // 1 = Lundi
+      customMonday = d;
+      break;
+    }
+  }
+
+  // Récupérer la semaine ISO et l'année de ce lundi unique
+  const { week, year } = getISOWeekAndYear(customMonday);
+
+  return { week, year, start, end };
+}
+
+/**
+ * Reconstruit les détails d'une semaine personnalisée à partir de son numéro de semaine
+ * et année d'identification uniques (qui correspondent à la semaine ISO du lundi qu'elle contient).
+ */
+export function getCustomWeekDetailsFromWeek(
+  week: number,
+  year: number,
+  weekStartDay: number
+): { week: number; year: number; start: Date; end: Date } {
+  // Le lundi ISO correspondant aux paramètres
+  const isoRange = getDatesForISOWeek(week, year);
+  const isoMonday = new Date(isoRange.start);
+
+  // Le customRange contenant ce lundi
+  const { start, end } = getCustomWeekRange(isoMonday, weekStartDay);
+
+  return { week, year, start, end };
+}
+
+

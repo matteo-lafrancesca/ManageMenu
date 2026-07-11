@@ -3,10 +3,9 @@ import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 import {
   getParisDate,
-  getISOWeekAndYear,
-  getDatesForISOWeek,
   normalizeToUTCDate,
-  getCustomWeekRange,
+  getCustomWeekDetails,
+  getCustomWeekDetailsFromWeek,
 } from '@/lib/date-utils';
 
 
@@ -47,21 +46,16 @@ export async function GET(request: Request) {
         );
       }
 
-      // Calcule le lundi ISO de cette semaine, puis ajuste selon weekStartDay
-      const isoRange = getDatesForISOWeek(week, year);
-      const isoMonday = new Date(isoRange.start);
-      const customRange = getCustomWeekRange(getParisDate(isoMonday), weekStartDay);
-      start = customRange.start;
-      end = customRange.end;
+      const details = getCustomWeekDetailsFromWeek(week, year, weekStartDay);
+      start = details.start;
+      end = details.end;
     } else {
-      // Semaine personnalisée contenant la date actuelle
       const nowParis = getParisDate();
-      const isoInfo = getISOWeekAndYear(nowParis);
-      week = isoInfo.week;
-      year = isoInfo.year;
-      const customRange = getCustomWeekRange(nowParis, weekStartDay);
-      start = customRange.start;
-      end = customRange.end;
+      const details = getCustomWeekDetails(nowParis, weekStartDay);
+      week = details.week;
+      year = details.year;
+      start = details.start;
+      end = details.end;
     }
 
     const programmations = await db.programmation.findMany({

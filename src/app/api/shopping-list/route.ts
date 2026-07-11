@@ -3,9 +3,8 @@ import { db } from '@/lib/db';
 import { getSessionUser } from '@/lib/auth';
 import {
   getParisDate,
-  getISOWeekAndYear,
-  getDatesForISOWeek,
-  getCustomWeekRange,
+  getCustomWeekDetails,
+  getCustomWeekDetailsFromWeek,
 } from '@/lib/date-utils';
 
 import { CATEGORY_DETAILS, CategorieIngredient } from '@/types';
@@ -55,20 +54,16 @@ export async function GET(request: Request) {
         );
       }
 
-      const isoRange = getDatesForISOWeek(week, year);
-      const isoMonday = new Date(isoRange.start);
-      const customRange = getCustomWeekRange(getParisDate(isoMonday), weekStartDay);
-      start = customRange.start;
-      end = customRange.end;
+      const details = getCustomWeekDetailsFromWeek(week, year, weekStartDay);
+      start = details.start;
+      end = details.end;
     } else {
-      // Semaine actuelle selon l'heure de Paris
       const nowParis = getParisDate();
-      const isoInfo = getISOWeekAndYear(nowParis);
-      week = isoInfo.week;
-      year = isoInfo.year;
-      const customRange = getCustomWeekRange(nowParis, weekStartDay);
-      start = customRange.start;
-      end = customRange.end;
+      const details = getCustomWeekDetails(nowParis, weekStartDay);
+      week = details.week;
+      year = details.year;
+      start = details.start;
+      end = details.end;
     }
 
     // 3. Récupérer les programmations de repas de la semaine
