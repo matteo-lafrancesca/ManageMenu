@@ -69,6 +69,11 @@ Règles impératives de détection :
 1. Valide d'abord si l'image représente de la nourriture humaine comestible, un ingrédient ou un plat cuisiné.
 2. Si ce n'est pas le cas (ex : animaux, objets, vêtements, personnes, paysages, etc.), tu DOIS impérativement positionner "isMeal" à false et donner une explication dans "raisonRefus". Dans ce cas, les champs "titre", "ingredients" et "recette" peuvent être laissés vides (chaîne vide pour le titre, tableaux vides).
 
+Règles impératives concernant les étapes de la recette (uniquement si isMeal est true) :
+1. Rédige les étapes de préparation de manière très concise, directe et non verbeuse.
+2. Évite les phrases superflues (ex: "selon les instructions de l'emballage", "selon vos goûts", etc.) ou les précisions évidentes.
+3. Fais des étapes courtes et factuelles (ex : "Faites cuire les pâtes et gardez de l'eau de cuisson en égouttant" au lieu de "Faites cuire les pâtes selon les instructions figurant sur l'emballage, égouttez-les en gardant un peu de cuisson").
+
 Règles impératives concernant les ingrédients (uniquement si isMeal est true) :
 Tu DOIS uniquement utiliser des ingrédients présents dans la liste ci-dessous.
 Pour chaque ingrédient de ta recette :
@@ -158,7 +163,7 @@ ${existingIngredientsList || "Aucun ingrédient pour le moment."}`;
             },
             recette: {
               type: "array",
-              description: "Les étapes de préparation détaillées, ordonnées et claires",
+              description: "Les étapes de préparation : très concises, directes et courtes, sans verbiage inutile (ex: 'Faites cuire les pâtes et gardez de l'eau de cuisson en égouttant')",
               items: {
                 type: "string",
               },
