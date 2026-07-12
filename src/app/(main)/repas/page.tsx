@@ -8,10 +8,12 @@ import { RepasWithIngredients } from '@/types';
 import RepasCard from '@/components/RepasCard';
 import RepasDetailModal from '@/components/RepasDetailModal';
 import SortDrawer from '@/components/SortDrawer';
+import { useNavigationCache } from '@/contexts/NavigationCacheContext';
 
 export default function RepasPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { repasCache, updateRepasCache, invalidatePlanningAndCourses } = useNavigationCache();
 
   const selectMode = searchParams.get('selectMode') === 'true';
   const dateParam = searchParams.get('date');
@@ -19,21 +21,21 @@ export default function RepasPage() {
   const returnWeek = searchParams.get('returnWeek');
   const returnYear = searchParams.get('returnYear');
 
-  const [repasList, setRepasList] = useState<RepasWithIngredients[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [repasList, setRepasList] = useState<RepasWithIngredients[]>(repasCache.repasList);
+  const [loading, setLoading] = useState(!repasCache.isLoaded);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   
   // Search & Filter state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('date_creation');
+  const [searchQuery, setSearchQuery] = useState(repasCache.searchQuery);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(repasCache.searchQuery);
+  const [sortBy, setSortBy] = useState(repasCache.sortBy);
   const [isSortOpen, setIsSortOpen] = useState(false);
   
   // Pagination & Scroll Observer state
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(repasCache.page);
+  const [hasMore, setHasMore] = useState(repasCache.hasMore);
   const observerTargetRef = useRef<HTMLDivElement | null>(null);
   
   // Detail Modal state
@@ -41,6 +43,7 @@ export default function RepasPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   const [isRefetching, setIsRefetching] = useState(false);
+  const isInitialMountRef = useRef(true);
 
   // Synchronisation synchrone de la pagination lors du changement de recherche ou de tri (Derived State)
   const prevSearchQueryRef = useRef(debouncedSearchQuery);
@@ -57,18 +60,11 @@ export default function RepasPage() {
       setIsRefetching(true);
     }
     // Scroll to top to avoid auto-triggering the scroll observer during update
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    const mainEl = document.querySelector('main');
+    if (mainEl) {
+      mainEl.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
-
-  // Load saved sorting option from localStorage
-  useEffect(() => {
-    const savedSort = localStorage.getItem('repas_sort_by');
-    if (savedSort) {
-      setSortBy(savedSort);
-    }
-  }, []);
 
   // Save sorting option to localStorage on change
   const handleSortChange = (newSort: string) => {
@@ -84,6 +80,41 @@ export default function RepasPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Synchroniser l'état local avec le cache
+  useEffect(() => {
+    updateRepasCache({
+      repasList,
+      page,
+      hasMore,
+      searchQuery,
+      sortBy,
+      isLoaded: true
+    });
+  }, [repasList, page, hasMore, searchQuery, sortBy, updateRepasCache]);
+
+  // Gérer la position de défilement (Scroll Restoration)
+  useEffect(() => {
+    const mainEl = document.querySelector('main');
+    if (!mainEl) return;
+
+    if (repasCache.scrollPosition && repasCache.isLoaded) {
+      const timer = setTimeout(() => {
+        mainEl.scrollTop = repasCache.scrollPosition;
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [repasCache.isLoaded, repasCache.scrollPosition]);
+
+  // Sauvegarder la position de défilement au démontage
+  useEffect(() => {
+    return () => {
+      const mainEl = document.querySelector('main');
+      if (mainEl) {
+        updateRepasCache({ scrollPosition: mainEl.scrollTop });
+      }
+    };
+  }, [updateRepasCache]);
+
   // Fetch meals on change of page, debounced search query or sort mode
   useEffect(() => {
     let active = true;
@@ -93,7 +124,7 @@ export default function RepasPage() {
         if (page === 1) {
           if (repasList.length === 0) {
             setLoading(true);
-          } else {
+          } else if (!isInitialMountRef.current) {
             setIsRefetching(true);
           }
         } else {
@@ -135,6 +166,7 @@ export default function RepasPage() {
           setLoading(false);
           setLoadingMore(false);
           setIsRefetching(false);
+          isInitialMountRef.current = false;
         }
       }
     };
@@ -167,7 +199,9 @@ export default function RepasPage() {
         observer.unobserve(observerTarget);
       }
     };
-  }, [hasMore, loading, loadingMore, isRefetching]);  const handleSelectRepas = async (repasId: number) => {
+  }, [hasMore, loading, loadingMore, isRefetching]);
+
+  const handleSelectRepas = async (repasId: number) => {
     if (!dateParam || !heureParam) return;
     try {
       setIsSelecting(true);
@@ -185,6 +219,9 @@ export default function RepasPage() {
         const data = await res.json();
         throw new Error(data.error || 'Erreur lors de la programmation.');
       }
+
+      // Invalider le cache planification et courses car un repas a été planifié
+      invalidatePlanningAndCourses();
 
       // Redirect back to planning page
       let redirectUrl = '/planification';

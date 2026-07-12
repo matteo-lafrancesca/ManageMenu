@@ -13,21 +13,27 @@ import { getCustomWeekDays, getOrderedDayLabels, getAdjacentWeek } from '@/lib/d
 import RepasDetailModal from '@/components/RepasDetailModal';
 import WeekSelector from '@/components/WeekSelector';
 import { useSettings } from '@/contexts/SettingsContext';
-
+import { useNavigationCache } from '@/contexts/NavigationCacheContext';
 
 export default function PlanificationPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { weekStartDay } = useSettings();
+  const { planificationCache, updatePlanificationCache } = useNavigationCache();
 
-  const [loading, setLoading] = useState(true);
+  const weekParam = searchParams.get('week') || 'current';
+  const yearParam = searchParams.get('year') || 'current';
+  const cacheKey = `${weekParam}-${yearParam}`;
+  const isCacheValid = planificationCache.isLoaded && planificationCache.key === cacheKey;
+
+  const [loading, setLoading] = useState(!isCacheValid);
   const [error, setError] = useState<string | null>(null);
   
-  const [currentWeek, setCurrentWeek] = useState<number | null>(null);
-  const [currentYear, setCurrentYear] = useState<number | null>(null);
-  const [weekInfo, setWeekInfo] = useState<{ start: string; end: string } | null>(null);
-  const [programmations, setProgrammations] = useState<ProgrammationWithRepas[]>([]);
+  const [currentWeek, setCurrentWeek] = useState<number | null>(isCacheValid ? planificationCache.currentWeek : null);
+  const [currentYear, setCurrentYear] = useState<number | null>(isCacheValid ? planificationCache.currentYear : null);
+  const [weekInfo, setWeekInfo] = useState<{ start: string; end: string } | null>(isCacheValid ? planificationCache.weekInfo : null);
+  const [programmations, setProgrammations] = useState<ProgrammationWithRepas[]>(isCacheValid ? planificationCache.programmations : []);
   
   // Modal states for meal details
   const [selectedRepas, setSelectedRepas] = useState<RepasWithIngredients | null>(null);
@@ -41,15 +47,17 @@ export default function PlanificationPage() {
     let active = true;
     const fetchPlanning = async () => {
       try {
-        setLoading(true);
+        if (!isCacheValid) {
+          setLoading(true);
+        }
         setError(null);
         
-        const weekParam = searchParams.get('week');
-        const yearParam = searchParams.get('year');
+        const weekVal = searchParams.get('week');
+        const yearVal = searchParams.get('year');
         
         let url = '/api/planning';
-        if (weekParam && yearParam) {
-          url += `?week=${weekParam}&year=${yearParam}`;
+        if (weekVal && yearVal) {
+          url += `?week=${weekVal}&year=${yearVal}`;
         }
         
         const res = await fetch(url);
@@ -66,6 +74,18 @@ export default function PlanificationPage() {
           setWeekInfo({
             start: data.start,
             end: data.end
+          });
+          // Update cache
+          updatePlanificationCache({
+            programmations: data.programmations,
+            currentWeek: data.week,
+            currentYear: data.year,
+            weekInfo: {
+              start: data.start,
+              end: data.end
+            },
+            isLoaded: true,
+            key: cacheKey
           });
         }
       } catch (err: any) {
@@ -84,7 +104,7 @@ export default function PlanificationPage() {
     return () => {
       active = false;
     };
-  }, [searchParams]);
+  }, [searchParams, cacheKey, isCacheValid, updatePlanificationCache]);
 
   // Navigate to previous/next week using standard ISO week offsets
   const handlePrevWeek = () => {
@@ -147,7 +167,11 @@ export default function PlanificationPage() {
   };
 
   const handleUnscheduleSuccess = async (progId: number) => {
-    setProgrammations((prev) => prev.filter((p) => p.id !== progId));
+    setProgrammations((prev) => {
+      const updated = prev.filter((p) => p.id !== progId);
+      updatePlanificationCache({ programmations: updated });
+      return updated;
+    });
   };
 
   const handleReprogram = () => {

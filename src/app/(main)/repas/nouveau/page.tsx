@@ -22,6 +22,7 @@ import { compressImage } from '@/lib/image-compression';
 import IngredientSearchInput, { IngredientSuggestion } from '@/components/IngredientSearchInput';
 import IngredientRow, { IngredientRowItem } from '@/components/IngredientRow';
 import CreateIngredientDrawer from '@/components/CreateIngredientDrawer';
+import { useNavigationCache } from '@/contexts/NavigationCacheContext';
 
 interface StepItem {
   id: string;
@@ -30,6 +31,7 @@ interface StepItem {
 
 export default function NouveauRepasPage() {
   const router = useRouter();
+  const { invalidateRepasCache } = useNavigationCache();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -330,6 +332,7 @@ export default function NouveauRepasPage() {
         throw new Error(data.error || 'Erreur lors de la création du repas.');
       }
 
+      invalidateRepasCache();
       router.push('/repas');
     } catch (err: any) {
       setError(err.message || 'Une erreur inattendue est survenue.');

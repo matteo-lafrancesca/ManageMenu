@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
+import { NavigationCacheProvider } from "@/contexts/NavigationCacheContext";
 import GestureBlocker from "@/components/GestureBlocker";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -85,7 +86,9 @@ export default function RootLayout({
 
         <AuthProvider>
           <SettingsProvider>
-            {children}
+            <NavigationCacheProvider>
+              {children}
+            </NavigationCacheProvider>
           </SettingsProvider>
         </AuthProvider>
 

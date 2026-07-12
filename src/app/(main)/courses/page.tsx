@@ -27,6 +27,7 @@ import ConfirmDeleteDrawer from '@/components/ConfirmDeleteDrawer';
 import AddExtraDrawer from '@/components/AddExtraDrawer';
 import WeekSelector from '@/components/WeekSelector';
 import { useSettings } from '@/contexts/SettingsContext';
+import { useNavigationCache } from '@/contexts/NavigationCacheContext';
 
 
 interface ShoppingItem {
@@ -63,13 +64,19 @@ export default function CoursesPage() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { weekStartDay } = useSettings();
+  const { coursesCache, updateCoursesCache } = useNavigationCache();
 
-  const [loading, setLoading] = useState(true);
+  const weekParam = searchParams.get('week') || 'current';
+  const yearParam = searchParams.get('year') || 'current';
+  const cacheKey = `${weekParam}-${yearParam}`;
+  const isCacheValid = coursesCache.isLoaded && coursesCache.key === cacheKey;
+
+  const [loading, setLoading] = useState(!isCacheValid);
   const [error, setError] = useState<string | null>(null);
-  const [categories, setCategories] = useState<CategoryGroup[]>([]);
-  const [extras, setExtras] = useState<any[]>([]);
-  const [currentWeek, setCurrentWeek] = useState<number | null>(null);
-  const [currentYear, setCurrentYear] = useState<number | null>(null);
+  const [categories, setCategories] = useState<CategoryGroup[]>(isCacheValid ? coursesCache.categories : []);
+  const [extras, setExtras] = useState<any[]>(isCacheValid ? coursesCache.extras : []);
+  const [currentWeek, setCurrentWeek] = useState<number | null>(isCacheValid ? coursesCache.currentWeek : null);
+  const [currentYear, setCurrentYear] = useState<number | null>(isCacheValid ? coursesCache.currentYear : null);
 
   // Floating action error state
   const [actionError, setActionError] = useState<string | null>(null);
@@ -91,18 +98,39 @@ export default function CoursesPage() {
     };
   }, []);
 
+  // Synchroniser l'état local avec le cache
+  useEffect(() => {
+    const urlWeek = searchParams.get('week');
+    const urlYear = searchParams.get('year');
+    
+    const isMatching = 
+      (urlWeek === null || currentWeek === parseInt(urlWeek, 10)) &&
+      (urlYear === null || currentYear === parseInt(urlYear, 10));
+      
+    if (isMatching && currentWeek !== null && currentYear !== null) {
+      updateCoursesCache({
+        categories,
+        extras,
+        currentWeek,
+        currentYear,
+        isLoaded: true,
+        key: cacheKey,
+      });
+    }
+  }, [categories, extras, currentWeek, currentYear, cacheKey, searchParams, updateCoursesCache]);
+
   // Unified fetch shopping list data function
   const fetchShoppingList = async (showLoader = true) => {
     try {
-      if (showLoader) setLoading(true);
+      if (showLoader && !isCacheValid) setLoading(true);
       setError(null);
 
-      const weekParam = searchParams.get('week');
-      const yearParam = searchParams.get('year');
+      const weekVal = searchParams.get('week');
+      const yearVal = searchParams.get('year');
 
       let url = '/api/shopping-list';
-      if (weekParam && yearParam) {
-        url += `?week=${weekParam}&year=${yearParam}`;
+      if (weekVal && yearVal) {
+        url += `?week=${weekVal}&year=${yearVal}`;
       }
 
       const res = await fetch(url);
@@ -124,7 +152,7 @@ export default function CoursesPage() {
 
   useEffect(() => {
     fetchShoppingList(true);
-  }, [searchParams]);
+  }, [searchParams, cacheKey, isCacheValid]);
 
   // Auto-dismiss floating action errors after 4 seconds
   useEffect(() => {
