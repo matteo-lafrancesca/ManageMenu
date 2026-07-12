@@ -22,6 +22,10 @@ export default function GestureBlocker() {
         touchStartY = e.touches[0].clientY;
         // On considère un contact comme "proche du bord" s'il commence à moins de 25px des bords gauche/droit
         isEdgeTouch = touchStartX < 25 || touchStartX > window.innerWidth - 25;
+        // Bloquer immédiatement sur les bords pour empêcher Safari de capter le geste système
+        if (isEdgeTouch) {
+          e.preventDefault();
+        }
       }
     };
 
@@ -40,7 +44,7 @@ export default function GestureBlocker() {
       }
     };
 
-    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
     document.addEventListener('touchmove', handleTouchMove, { passive: false });
 
     return () => {
