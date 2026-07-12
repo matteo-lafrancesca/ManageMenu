@@ -4,9 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Plus,
-  Trash2,
-  ArrowUp,
-  ArrowDown,
   Camera,
   Loader2,
   ChevronLeft,
@@ -23,11 +20,9 @@ import IngredientSearchInput, { IngredientSuggestion } from '@/components/Ingred
 import IngredientRow, { IngredientRowItem } from '@/components/IngredientRow';
 import CreateIngredientDrawer from '@/components/CreateIngredientDrawer';
 import { useNavigationCache } from '@/contexts/NavigationCacheContext';
+import SortableStepsList, { StepItem } from '@/components/SortableStepsList';
 
-interface StepItem {
-  id: string;
-  text: string;
-}
+// StepItem est importé depuis SortableStepsList
 
 export default function NouveauRepasPage() {
   const router = useRouter();
@@ -154,29 +149,7 @@ export default function NouveauRepasPage() {
     handleSelectIngredient(createdIngredient);
   };
 
-  // Step 3: Instructions helpers
-  const handleAddStep = () => {
-    setSteps([...steps, { id: Math.random().toString(), text: '' }]);
-  };
-
-  const handleRemoveStep = (id: string) => {
-    setSteps(steps.filter(s => s.id !== id));
-  };
-
-  const handleUpdateStep = (id: string, value: string) => {
-    setSteps(steps.map(s => s.id === id ? { ...s, text: value } : s));
-  };
-
-  const handleMoveStep = (index: number, direction: 'up' | 'down') => {
-    if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === steps.length - 1) return;
-    const targetIdx = direction === 'up' ? index - 1 : index + 1;
-    const newSteps = [...steps];
-    const temp = newSteps[index];
-    newSteps[index] = newSteps[targetIdx];
-    newSteps[targetIdx] = temp;
-    setSteps(newSteps);
-  };
+  // Step 3: Instructions helpers (gérés par SortableStepsList via onChange)
 
   // Image analysis with Gemini
   const handleAnalyzeImage = async () => {
@@ -793,77 +766,8 @@ export default function NouveauRepasPage() {
 
         {/* STEP 3: Recipe Steps */}
         {step === 3 && (
-          <div className="space-y-4 animate-fade-in">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-bold text-text-light-main dark:text-text-dark-main">
-                Étapes de préparation ({steps.length})
-              </span>
-            </div>
-
-            <div className="space-y-4">
-              {steps.map((s, idx) => (
-                <div
-                  key={s.id}
-                  className="flex gap-3 items-start py-3 border-b border-neutral-100 dark:border-neutral-800/40 animate-fade-in"
-                >
-                  {/* Step Number Badge */}
-                  <span className="flex items-center justify-center shrink-0 w-6 h-6 rounded-full bg-brand-light dark:bg-brand/10 text-brand text-xs font-extrabold border border-brand/15 mt-1.5">
-                    {idx + 1}
-                  </span>
-
-                  {/* Step description */}
-                  <textarea
-                    value={s.text}
-                    onChange={(e) => handleUpdateStep(s.id, e.target.value)}
-                    placeholder={`Description de l'étape ${idx + 1}...`}
-                    rows={4}
-                    className="flex-1 px-3 py-2 text-sm border border-neutral-200 dark:border-neutral-800 rounded-xl bg-card-light dark:bg-card-dark text-text-light-main dark:text-text-dark-main outline-none focus:border-brand font-medium min-h-[96px] resize-y"
-                  />
-
-                  {/* Actions tools */}
-                  <div className="flex flex-col gap-1.5 shrink-0 mt-1">
-                    <button
-                      type="button"
-                      onClick={() => handleMoveStep(idx, 'up')}
-                      disabled={idx === 0}
-                      className="p-1 rounded-lg text-text-light-muted dark:text-text-dark-muted hover:bg-neutral-200 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
-                      title="Monter"
-                    >
-                      <ArrowUp className="h-3.5 w-3.5" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleMoveStep(idx, 'down')}
-                      disabled={idx === steps.length - 1}
-                      className="p-1 rounded-lg text-text-light-muted dark:text-text-dark-muted hover:bg-neutral-200 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
-                      title="Descendre"
-                    >
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveStep(s.id)}
-                      className="p-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer"
-                      title="Supprimer"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Add step trigger */}
-            <button
-              type="button"
-              onClick={handleAddStep}
-              className="w-full flex items-center justify-center gap-2 px-5 py-3 border border-dashed border-neutral-300 dark:border-neutral-800 rounded-2xl hover:border-brand/40 text-text-light-muted dark:text-text-dark-muted hover:text-brand font-bold text-sm transition-all duration-300 active:scale-98 cursor-pointer"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Ajouter une étape</span>
-            </button>
+          <div className="animate-fade-in">
+            <SortableStepsList steps={steps} onChange={setSteps} />
           </div>
         )}
 
